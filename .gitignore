@@ -1,0 +1,123 @@
+# ==========================================
+# PYTHON BASICS
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyc
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+# ==========================================
+# DATA SCIENCE / BIOINFORMATICS
+# ==========================================
+# Large datasets / sequencing outputs
+data/
+datasets/
+results/
+outputs/
+*.fastq
+*.fastq.gz
+*.bam
+*.sam
+*.counts
+*.h5ad
+*.loom
+*.mtx
+*.tsv.gz
+*.csv.gz
+# Temporary analysis files
+*.tmp
+*.temp
+*.log
+# ==========================================
+# STREAMLIT
+# ==========================================
+.streamlit/secrets.toml
+.streamlit/cache/
+.streamlit/config.toml.local
+# ==========================================
+# JUPYTER / NOTEBOOKS
+# ==========================================
+.ipynb_checkpoints/
+# ==========================================
+# IDE / EDITORS
+# ==========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+# ==========================================
+# SYSTEM FILES
+# ==========================================
+.DS_Store
+Thumbs.db
+# ==========================================
+# BUILD / PACKAGING
+# ==========================================
+build/
+dist/
+*.egg-info/
+.eggs/
+# ==========================================
+# CACHE / TESTING
+# ==========================================
+.cache/
+.pytest_cache/
+.mypy_cache/
+# ==========================================
+# AI / AGENT CONFIGS
+# ==========================================
+# Claude / Anthropic
+.claude/
+.anthropic/
+# OpenAI / ChatGPT
+.openai/
+.chatgpt/
+# GitHub Copilot
+.copilot/
+.github/copilot/
+# Cursor
+.cursor/
+.cursorules
+.cursorrules
+# Windsurf / Codeium
+.windsurf/
+.codeium/
+# Tabnine
+.tabnine/
+.tabnine_root
+# Amazon CodeWhisperer / Q
+.aws/codewhisperer/
+.amazonq/
+# Cody (Sourcegraph)
+.cody/
+# Aider
+.aider*
+# Continue.dev
+.continue/
+# General AI configs
+ai_config/
+*.promptlog
+*.ailog
+# ==========================================
+# SECRETS / KEYS
+# ==========================================
+.env.local
+.env.*.local
+*.pem
+*.key
+secrets/
+credentials/
+# ==========================================
+# OPTIONAL: MEDIA / DEMO OUTPUTS
+# ==========================================
+*.gif
+*.png
+*.jpg
+figures/
+plots/

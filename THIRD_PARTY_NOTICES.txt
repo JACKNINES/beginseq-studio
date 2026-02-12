@@ -1,0 +1,117 @@
+===============================================================================
+THIRD-PARTY SOFTWARE NOTICES — BeginSeq Studio
+===============================================================================
+
+BeginSeq Studio incorporates and depends on the following open-source
+software. Each component is listed with its license type, copyright holder,
+and a link to the full license text.
+
+We gratefully acknowledge the authors and contributors of these projects.
+
+===============================================================================
+
+
+1. Streamlit
+   License:    Apache License 2.0
+   Copyright:  Snowflake Inc.
+   Website:    https://streamlit.io/
+   License:    https://github.com/streamlit/streamlit/blob/develop/LICENSE
+   Usage:      Web application framework and user interface.
+
+2. PyDESeq2
+   License:    MIT License
+   Copyright:  Owkin, Inc.
+   Website:    https://github.com/owkin/PyDESeq2
+   License:    https://github.com/owkin/PyDESeq2/blob/main/LICENSE
+   Usage:      Python implementation of the DESeq2 algorithm for RNA-seq
+               differential expression analysis.
+
+3. Pandas
+   License:    BSD 3-Clause License
+   Copyright:  pandas Development Team
+   Website:    https://pandas.pydata.org/
+   License:    https://github.com/pandas-dev/pandas/blob/main/LICENSE
+   Usage:      Tabular data manipulation and I/O.
+
+4. NumPy
+   License:    BSD 3-Clause License
+   Copyright:  NumPy Developers
+   Website:    https://numpy.org/
+   License:    https://github.com/numpy/numpy/blob/main/LICENSE.txt
+   Usage:      Numerical operations and array computation.
+
+5. Matplotlib
+   License:    Matplotlib License (BSD-compatible)
+   Copyright:  Matplotlib Development Team
+   Website:    https://matplotlib.org/
+   License:    https://github.com/matplotlib/matplotlib/blob/main/LICENSE/LICENSE
+   Usage:      Static plot generation (volcano, MA, heatmap).
+
+6. Seaborn
+   License:    BSD 3-Clause License
+   Copyright:  Michael Waskom
+   Website:    https://seaborn.pydata.org/
+   License:    https://github.com/mwaskom/seaborn/blob/master/LICENSE.md
+   Usage:      Statistical data visualization (heatmaps, clustermaps).
+
+7. scikit-learn
+   License:    BSD 3-Clause License
+   Copyright:  scikit-learn Developers
+   Website:    https://scikit-learn.org/
+   License:    https://github.com/scikit-learn/scikit-learn/blob/main/COPYING
+   Usage:      PCA and clustering for sample visualizations.
+
+8. SciPy
+   License:    BSD 3-Clause License
+   Copyright:  SciPy Developers
+   Website:    https://scipy.org/
+   License:    https://github.com/scipy/scipy/blob/main/LICENSE.txt
+   Usage:      Scientific computing and hierarchical clustering.
+
+9. adjustText
+   License:    MIT License
+   Copyright:  Ilya Flyamer
+   Website:    https://github.com/Phlya/adjustText
+   License:    https://github.com/Phlya/adjustText/blob/master/LICENSE
+   Usage:      Automatic label adjustment in scatter plots to avoid overlaps.
+
+10. pyCombat (combat)
+    License:    MIT License
+    Copyright:  Abdelkader Behdenna
+    Website:    https://github.com/epigenelabs/pyComBat
+    License:    https://github.com/epigenelabs/pyComBat/blob/master/LICENSE
+    Usage:      Batch effect correction (ComBat) for PCA visualizations.
+
+11. Requests
+    License:    Apache License 2.0
+    Copyright:  Kenneth Reitz & contributors
+    Website:    https://docs.python-requests.org/
+    License:    https://github.com/psf/requests/blob/main/LICENSE
+    Usage:      HTTP client for GDC REST API communication.
+
+12. Scanpy  (upcoming — scRNA-seq module)
+    License:    BSD 3-Clause License
+    Copyright:  Theis Lab, Helmholtz Center Munich
+    Website:    https://scanpy.readthedocs.io/
+    License:    https://github.com/scverse/scanpy/blob/main/LICENSE
+    Usage:      Single-cell RNA-seq analysis pipeline (planned).
+
+
+===============================================================================
+FULL LICENSE TEXTS — SUMMARY
+===============================================================================
+
+Apache License 2.0  (Streamlit, Requests)
+    https://www.apache.org/licenses/LICENSE-2.0
+
+MIT License  (PyDESeq2, adjustText, pyCombat)
+    https://opensource.org/licenses/MIT
+
+BSD 3-Clause License  (Pandas, NumPy, scikit-learn, SciPy, Seaborn, Scanpy)
+    https://opensource.org/licenses/BSD-3-Clause
+
+Matplotlib License  (BSD-compatible)
+    https://matplotlib.org/stable/users/project/license.html
+
+
+===============================================================================

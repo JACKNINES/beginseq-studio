@@ -1,0 +1,35 @@
+# ──────────────────────────────────────────────────────────────────
+# BeginSeq Studio — Dependencies
+# ──────────────────────────────────────────────────────────────────
+# Install with: pip install -r requirements.txt
+# ──────────────────────────────────────────────────────────────────
+
+# Web framework for the user interface
+streamlit>=1.28.0
+
+# Tabular data manipulation
+pandas>=2.0.0
+
+# Numerical operations (log, abs, etc.)
+numpy>=1.24.0
+
+# Plot visualization (volcano, MA, PCA, heatmap)
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# PCA and clustering for visualizations
+scikit-learn>=1.3.0
+scipy>=1.10.0
+
+# Automatic label adjustment in plots
+adjustText>=0.8
+
+# Python implementation of the DESeq2 algorithm for
+# RNA-seq differential expression analysis
+pydeseq2>=0.4.0
+
+# Batch effect correction (ComBat) for PCA
+combat>=0.3.3
+
+# HTTP requests for the GDC REST API (Dataset Creator)
+requests>=2.28.0
