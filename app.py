@@ -11,6 +11,17 @@ To run:
 
 import streamlit as st
 from i18n import t
+from config import AUTO_SHUTDOWN_CONFIG
+from auto_shutdown import start_shutdown_watcher
+
+# ─────────────────────────────────────────────────────────────────────
+# Auto-shutdown: stop the server when all browser tabs are closed
+# ─────────────────────────────────────────────────────────────────────
+if AUTO_SHUTDOWN_CONFIG["enabled"]:
+    start_shutdown_watcher(
+        grace_period=AUTO_SHUTDOWN_CONFIG["grace_period_seconds"],
+        poll_interval=AUTO_SHUTDOWN_CONFIG["poll_interval_seconds"],
+    )
 
 # ─────────────────────────────────────────────────────────────────────
 # Page configuration

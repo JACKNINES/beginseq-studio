@@ -388,3 +388,19 @@ FILE_CONFIG: dict = {
         "csv": ",",
     },
 }
+
+# ──────────────────────────────────────────────────────────────────────
+# 9. Auto-shutdown configuration
+# ──────────────────────────────────────────────────────────────────────
+AUTO_SHUTDOWN_CONFIG: dict = {
+    # Seconds to wait after the last browser tab closes before
+    # shutting down the Streamlit server.  30 s is enough to survive
+    # page refreshes and multipage navigation.
+    "grace_period_seconds": 30,
+
+    # How often (in seconds) to check for active sessions.
+    "poll_interval_seconds": 5,
+
+    # Set to False to keep the server running indefinitely.
+    "enabled": True,
+}
