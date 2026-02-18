@@ -155,7 +155,7 @@ The 10x File Integrator is lightweight. It creates the AnnData object in memory 
 This feature requires:
 - **R** (>= 4.0) installed and available on PATH
 - The **SoupX** R package installed: `install.packages("SoupX")` from an R console
-- **rpy2** Python package (included in `requirements.txt`)
+- **rpy2** Python package (included in `requirements-scrna.txt`)
 
 If any of these is missing, the app will show a status message explaining what's needed.
 

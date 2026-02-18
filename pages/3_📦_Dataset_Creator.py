@@ -21,6 +21,22 @@ from gdc_client import (
     build_count_matrix,
 )
 
+
+# ─────────────────────────────────────────────────────────────────────
+# Cached wrappers — avoid redundant GDC API calls on Streamlit reruns
+# ─────────────────────────────────────────────────────────────────────
+
+@st.cache_data(ttl=86400, show_spinner=False)
+def _cached_fetch_projects():
+    """Fetch TCGA projects (cached for 24 h)."""
+    return fetch_tcga_projects()
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def _cached_fetch_files(project_id: str):
+    """Fetch RNA-seq files for a project (cached for 1 h)."""
+    return fetch_rnaseq_files(project_id)
+
 # ─────────────────────────────────────────────────────────────────────
 # Page config
 # ─────────────────────────────────────────────────────────────────────
@@ -89,7 +105,7 @@ st.markdown(t("dc.step1_desc"))
 if st.button(t("dc.load_projects"), key="btn_load_projects"):
     with st.spinner(t("dc.loading_projects")):
         try:
-            projects = fetch_tcga_projects()
+            projects = _cached_fetch_projects()
             st.session_state.dc_projects = projects
             st.session_state.dc_files = None
             st.session_state.dc_counts = None
@@ -128,7 +144,7 @@ if st.session_state.dc_projects is not None:
         if st.button(t("dc.fetch_files"), key="btn_fetch_files"):
             with st.spinner(tf("dc.fetching_files", project=selected_project_id)):
                 try:
-                    files_df = fetch_rnaseq_files(selected_project_id)
+                    files_df = _cached_fetch_files(selected_project_id)
                     st.session_state.dc_files = files_df
                     st.session_state.dc_counts = None
                     st.session_state.dc_metadata = None

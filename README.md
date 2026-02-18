@@ -180,25 +180,36 @@ python -m venv venv
 source venv/bin/activate  # Linux/Mac
 # venv\Scripts\activate   # Windows
 
-# 3. Install dependencies
+# 3. Install core dependencies (Bulk RNA-seq + Dataset Creator)
 pip install -r requirements.txt
 
-# 4. Run the application
+# 4. (Optional) Install scRNA-seq dependencies — local use only
+pip install -r requirements-scrna.txt
+
+# 5. Run the application
 streamlit run app.py
 ```
 
 The application will open at `http://localhost:8501`.
 
+> **Note on Streamlit Cloud:** Only `requirements.txt` is needed for cloud deployments. The scRNA-seq module is automatically disabled on cloud (it requires more RAM than cloud instances provide), so `requirements-scrna.txt` is not needed there.
+
 ### Optional Dependencies
 
-The **SoupX Ambient RNA Removal** feature in the scRNA-seq module requires:
+#### scRNA-seq module
+
+The scRNA-seq module requires additional packages listed in `requirements-scrna.txt` (scanpy, anndata, harmonypy, etc.). These are **not included in the base `requirements.txt`** because they pull in heavy dependencies (PyTorch, LLVM) that are unnecessary for cloud deployments where the module is disabled.
+
+#### SoupX Ambient RNA Removal
+
+The **SoupX** feature in the scRNA-seq module additionally requires:
 
 1. **R** (>= 4.0) installed and available on `PATH`
 2. The **SoupX** R package — install it from R:
    ```r
    install.packages("SoupX")
    ```
-3. The **rpy2** Python package (included in `requirements.txt`)
+3. The **rpy2** Python package (included in `requirements-scrna.txt`)
 
 If R or SoupX is not available, the rest of BeginSeq Studio works normally — only the SoupX section will show a status message explaining what is missing.
 
@@ -208,21 +219,34 @@ If R or SoupX is not available, the rest of BeginSeq Studio works normally — o
 
 ```
 BeginSeq Studio/
-├── app.py                  # Main Streamlit entry point
-├── config.py               # Central configuration (thresholds, plot styles)
-├── i18n.py                 # Internationalisation (EN / ES translations)
-├── runtime_utils.py        # Localhost detection & upload-limit helpers
-├── scrna_pipeline.py       # scRNA-seq backend (scanpy, SoupX, 10x integrator)
-├── requirements.txt        # Python dependencies
+├── app.py                      # Main Streamlit entry point
+├── config.py                   # Central configuration (thresholds, plot styles)
+├── i18n.py                     # Internationalisation (EN / ES translations)
+├── runtime_utils.py            # Localhost detection & upload-limit helpers
+├── analysis.py                 # DESeq2 pipeline orchestrator (facade)
+├── deseq_runner.py             # PyDESeq2 wrapper
+├── validation.py               # Input data validation & normalization
+├── data_io.py                  # File reading/writing (CSV, TSV, ZIP)
+├── visualization.py            # Bulk RNA-seq plot generation
+├── classification.py           # Expression-based sample classification
+├── gdc_client.py               # GDC REST API client (Dataset Creator)
+├── scrna_pipeline.py           # scRNA-seq backend (scanpy, SoupX, 10x integrator)
+├── scrna_visualization.py      # scRNA-seq plot generation
+├── auto_shutdown.py            # Auto-shutdown on browser disconnect
+├── requirements.txt            # Core dependencies (Bulk + Dataset Creator)
+├── requirements-scrna.txt      # scRNA-seq dependencies (local-only)
 ├── .streamlit/
-│   └── config.toml         # Streamlit server settings (upload limits)
+│   └── config.toml             # Streamlit server settings (upload limits)
 ├── pages/
 │   ├── 1_🧬_Bulk_RNA-seq.py    # Bulk RNA-seq DE analysis page
 │   ├── 2_🔬_scRNA-seq.py       # Single-cell analysis page
 │   └── 3_📦_Dataset_Creator.py # GDC/TCGA dataset downloader
-├── LICENSE                 # MIT License
-├── THIRD_PARTY_NOTICES.txt # Third-party dependency attributions
-└── README.md               # This file
+├── tutorial_bulk_rnaseq.md     # Bulk RNA-seq tutorial
+├── tutorial_scrna_seq.md       # scRNA-seq tutorial
+├── tutorial_dataset_creator.md # Dataset Creator tutorial
+├── LICENSE                     # MIT License
+├── THIRD_PARTY_NOTICES.txt     # Third-party dependency attributions
+└── README.md                   # This file
 ```
 
 ---

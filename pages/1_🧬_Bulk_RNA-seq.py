@@ -37,6 +37,58 @@ from analysis import run_deseq2_pipeline, estimate_pipeline_time, estimate_pipel
 from visualization import prepare_volcano_data, create_volcano_plot, create_volcano_highlight, LEGEND_LOCATIONS
 from i18n import t, tf
 
+import io
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Cached wrappers — avoid redundant work on Streamlit reruns
+# ─────────────────────────────────────────────────────────────────────
+
+@st.cache_data(show_spinner=False)
+def _cached_read_counts(file_data: bytes, file_name: str):
+    """Read counts matrix (cached by file content hash)."""
+    buf = io.BytesIO(file_data)
+    buf.name = file_name
+    return read_counts_file(buf)
+
+
+@st.cache_data(show_spinner=False)
+def _cached_read_metadata(file_data: bytes, file_name: str):
+    """Read metadata file (cached by file content hash)."""
+    buf = io.BytesIO(file_data)
+    buf.name = file_name
+    return read_metadata_file(buf)
+
+
+@st.cache_data(show_spinner=False)
+def _cached_prepare_volcano(results_df, alpha, log2fc_threshold, min_base_mean):
+    """Classify genes for volcano plot (cached by parameters)."""
+    return prepare_volcano_data(results_df, alpha, log2fc_threshold, min_base_mean)
+
+
+@st.cache_data(show_spinner=False)
+def _cached_create_volcano(volcano_df, alpha, log2fc_threshold,
+                           test_level, reference_level, label_genes,
+                           title, shrinkage_applied, legend_loc):
+    """Render volcano plot (cached by parameters)."""
+    return create_volcano_plot(
+        volcano_df, alpha, log2fc_threshold, test_level, reference_level,
+        label_genes=label_genes, title=title,
+        shrinkage_applied=shrinkage_applied, legend_loc=legend_loc,
+    )
+
+
+@st.cache_data(show_spinner=False)
+def _cached_create_volcano_highlight(volcano_df, highlight_genes,
+                                     alpha, log2fc_threshold,
+                                     test_level, reference_level,
+                                     legend_loc):
+    """Render volcano highlight plot (cached by parameters)."""
+    return create_volcano_highlight(
+        volcano_df, highlight_genes, alpha, log2fc_threshold,
+        test_level, reference_level, legend_loc=legend_loc,
+    )
+
 
 def _format_seconds(seconds: float) -> str:
     """Format seconds into a human-readable string."""
@@ -183,9 +235,10 @@ if is_running_locally():
 if counts_file and metadata_file:
 
     # Read files using data_io (auto-detects separator)
+    # Cached by file content — changing a widget won't re-read the files.
     try:
-        counts_df = read_counts_file(counts_file)
-        metadata_df_raw = read_metadata_file(metadata_file)
+        counts_df = _cached_read_counts(counts_file.getvalue(), counts_file.name)
+        metadata_df_raw = _cached_read_metadata(metadata_file.getvalue(), metadata_file.name)
     except ValueError as e:
         st.error(f"❌ {tf('error.reading_files', error=e)}")
         st.stop()
@@ -1276,19 +1329,19 @@ if counts_file and metadata_file:
 
         with tab_volcano:
             # Always re-render volcano with current baseMean filter
-            volcano_all_df = prepare_volcano_data(
+            volcano_all_df = _cached_prepare_volcano(
                 results_df,
                 alpha=DESEQ2_DEFAULTS["alpha"],
                 log2fc_threshold=DESEQ2_DEFAULTS["log2fc_threshold"],
                 min_base_mean=viz_min_base_mean,
             )
-            fig_volcano_all = create_volcano_plot(
+            fig_volcano_all = _cached_create_volcano(
                 volcano_all_df,
                 alpha=DESEQ2_DEFAULTS["alpha"],
                 log2fc_threshold=DESEQ2_DEFAULTS["log2fc_threshold"],
                 test_level=st.session_state.get("test_level", "test"),
                 reference_level=st.session_state.get("reference_level", "reference"),
-                label_genes=top_10_genes if label_top_genes else None,
+                label_genes=tuple(top_10_genes) if label_top_genes and top_10_genes else None,
                 title=volcano_title,
                 shrinkage_applied=_shrinkage,
                 legend_loc=legend_loc,
@@ -1304,16 +1357,16 @@ if counts_file and metadata_file:
                 filt_log2fc = log2fc_threshold if filter_option != _radio_none else DESEQ2_DEFAULTS["log2fc_threshold"]
                 top_10_filtered = [g for g in (top_10_genes or []) if g in filtered_df.index]
 
-                volcano_filt_df = prepare_volcano_data(
+                volcano_filt_df = _cached_prepare_volcano(
                     filtered_df, alpha=filt_padj, log2fc_threshold=filt_log2fc,
                     min_base_mean=viz_min_base_mean,
                 )
-                fig_volcano_filt = create_volcano_plot(
+                fig_volcano_filt = _cached_create_volcano(
                     volcano_filt_df,
                     alpha=filt_padj, log2fc_threshold=filt_log2fc,
                     test_level=st.session_state.get("test_level", "test"),
                     reference_level=st.session_state.get("reference_level", "reference"),
-                    label_genes=top_10_filtered if label_top_genes else None,
+                    label_genes=tuple(top_10_filtered) if label_top_genes and top_10_filtered else None,
                     title=volcano_title,
                     shrinkage_applied=_shrinkage,
                     legend_loc=legend_loc,
@@ -1355,7 +1408,7 @@ if counts_file and metadata_file:
             highlight_genes = [g.strip() for g in raw_genes if g.strip()]
 
             if highlight_genes:
-                volcano_hl_df = prepare_volcano_data(
+                volcano_hl_df = _cached_prepare_volcano(
                     results_df,
                     alpha=DESEQ2_DEFAULTS["alpha"],
                     log2fc_threshold=DESEQ2_DEFAULTS["log2fc_threshold"],
@@ -1383,9 +1436,9 @@ if counts_file and metadata_file:
                         hl_details = results_df.loc[found].sort_values("padj")
                         st.dataframe(hl_details)
 
-                    fig_highlight = create_volcano_highlight(
+                    fig_highlight = _cached_create_volcano_highlight(
                         volcano_hl_df,
-                        highlight_genes=found,
+                        highlight_genes=tuple(found),
                         alpha=DESEQ2_DEFAULTS["alpha"],
                         log2fc_threshold=DESEQ2_DEFAULTS["log2fc_threshold"],
                         test_level=st.session_state.get("test_level", "test"),
