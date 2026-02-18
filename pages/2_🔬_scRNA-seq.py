@@ -83,7 +83,7 @@ if not is_running_locally() or not _scrna_deps_available:
 # ─────────────────────────────────────────────────────────────────────
 # Title with animation
 # ─────────────────────────────────────────────────────────────────────
-_cell_path = Path(__file__).resolve().parent.parent / "Cell.MP4"
+_cell_path = Path(__file__).resolve().parent.parent / "assets" / "Cell.MP4"
 if _cell_path.exists():
     _cell_b64 = base64.b64encode(_cell_path.read_bytes()).decode()
     st.markdown(

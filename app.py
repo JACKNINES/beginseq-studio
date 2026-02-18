@@ -63,7 +63,7 @@ with st.sidebar:
 # ─────────────────────────────────────────────────────────────────────
 import base64, pathlib
 
-_helix_path = pathlib.Path(__file__).resolve().parent / "helix.MP4"
+_helix_path = pathlib.Path(__file__).resolve().parent / "assets" / "helix.MP4"
 if _helix_path.exists():
     _helix_b64 = base64.b64encode(_helix_path.read_bytes()).decode()
     st.markdown(

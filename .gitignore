@@ -119,5 +119,7 @@ credentials/
 *.gif
 *.png
 *.jpg
+# Exception: assets/ folder (logo, animations)
+!assets/
 figures/
 plots/

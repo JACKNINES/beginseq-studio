@@ -1,4 +1,12 @@
-# 🧬 BeginSeq Studio
+<p align="center">
+  <img src="assets/beginseq_logo.png" alt="BeginSeq Studio" width="300">
+</p>
+
+<h1 align="center">BeginSeq Studio</h1>
+
+<p align="center">
+  <strong>Interactive RNA-seq analysis — no code required.</strong>
+</p>
 
 **BeginSeq Studio** is an interactive web application for RNA-seq analysis built with [Streamlit](https://streamlit.io/), created by **Elliot Ridout-Buhl**. It is designed for **beginners and researchers with no programming or command-line experience**, providing a fully code-free interface to perform bulk and single-cell differential expression analysis, build datasets from public repositories, and visualize results — all from the browser.
 
@@ -235,6 +243,11 @@ BeginSeq Studio/
 ├── scrna_pipeline.py           # scRNA-seq backend (scanpy, SoupX, 10x integrator)
 ├── scrna_visualization.py      # scRNA-seq plot generation
 ├── auto_shutdown.py            # Auto-shutdown on browser disconnect
+├── assets/
+│   ├── beginseq_logo.png       # Project logo
+│   ├── helix.MP4               # DNA helix animation (landing page)
+│   ├── Cell.MP4                # Cell animation (scRNA-seq page)
+│   └── Box.MP4                 # Box animation (Dataset Creator page)
 ├── requirements.txt            # Core dependencies (Bulk + Dataset Creator)
 ├── requirements-scrna.txt      # scRNA-seq dependencies (local-only)
 ├── .streamlit/

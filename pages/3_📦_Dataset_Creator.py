@@ -69,7 +69,7 @@ with st.sidebar:
 # ─────────────────────────────────────────────────────────────────────
 # Title
 # ─────────────────────────────────────────────────────────────────────
-_box_path = Path(__file__).resolve().parent.parent / "Box.MP4"
+_box_path = Path(__file__).resolve().parent.parent / "assets" / "Box.MP4"
 if _box_path.exists():
     _box_b64 = base64.b64encode(_box_path.read_bytes()).decode()
     st.markdown(
