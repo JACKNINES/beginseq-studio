@@ -73,6 +73,22 @@ if not is_running_locally():
     st.stop()
 
 # ─────────────────────────────────────────────────────────────────────
+# Dependency check: scRNA-seq packages may not be installed on cloud
+# ─────────────────────────────────────────────────────────────────────
+try:
+    import scanpy  # noqa: F401 — quick availability check
+except ImportError:
+    st.title(f"🔬 {t('scrna.title')}")
+    st.markdown("---")
+    st.error(
+        "**scRNA-seq dependencies are not installed.**\n\n"
+        "This module requires additional packages. Install them with:\n\n"
+        "```\npip install -r requirements-scrna.txt\n```\n\n"
+        "See the [README](https://github.com/JACKNINES/beginseq-studio#optional-dependencies) for details."
+    )
+    st.stop()
+
+# ─────────────────────────────────────────────────────────────────────
 # Title with animation
 # ─────────────────────────────────────────────────────────────────────
 _cell_path = Path(__file__).resolve().parent.parent / "Cell.MP4"

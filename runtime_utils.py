@@ -6,7 +6,29 @@ Provides helpers used across multiple pages:
     - Upload size limit enforcement per page.
 """
 
-_LOCAL_HOSTS = {"localhost", "127.0.0.1", "0.0.0.0", "::1", ""}
+import os
+
+_LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1", ""}
+
+# Streamlit Cloud sets these environment variables on their managed instances.
+_CLOUD_ENV_MARKERS = (
+    "STREAMLIT_SHARING_MODE",   # legacy Streamlit sharing
+    "IS_STREAMLIT_CLOUD",       # newer Streamlit Cloud
+    "HOME",                     # /home/adminuser on Streamlit Cloud
+)
+
+
+def _is_streamlit_cloud() -> bool:
+    """Detect Streamlit Cloud by environment markers."""
+    # Streamlit Cloud always runs as 'adminuser' in /home/adminuser
+    if os.environ.get("HOME", "") == "/home/adminuser":
+        return True
+    # Explicit cloud flags
+    if os.environ.get("STREAMLIT_SHARING_MODE"):
+        return True
+    if os.environ.get("IS_STREAMLIT_CLOUD"):
+        return True
+    return False
 
 
 def is_running_locally() -> bool:
@@ -14,27 +36,29 @@ def is_running_locally() -> bool:
     Return True if Streamlit is served from localhost.
 
     Detection strategy (in order):
-    1. Check ``streamlit.config.get_option("server.address")``.
+    1. Check for Streamlit Cloud environment markers.
+       If any are present, we are definitely NOT local.
+    2. Check ``streamlit.config.get_option("server.address")``.
        ``None`` or empty string means the default (localhost).
-    2. Parse the URL built by the Streamlit server utility.
+       Note: ``0.0.0.0`` is excluded because cloud deployments
+       also bind to ``0.0.0.0``.
     3. Conservative fallback: assume local.
     """
-    # Method 1: configured server address
+    # Method 1: cloud environment detection (most reliable)
+    if _is_streamlit_cloud():
+        return False
+
+    # Method 2: configured server address
     try:
         from streamlit import config
         server_addr = config.get_option("server.address")
+        # None or empty → default → localhost
         if server_addr is None or server_addr in _LOCAL_HOSTS:
             return True
-        return False
-    except Exception:
-        pass
-
-    # Method 2: parse the URL Streamlit builds
-    try:
-        from urllib.parse import urlparse
-        from streamlit.web.server.server_util import get_url
-        host = urlparse(get_url("")).hostname or ""
-        if host in _LOCAL_HOSTS:
+        # 0.0.0.0 means "listen on all interfaces" — common in both local
+        # Docker setups and cloud.  Since we already ruled out cloud above,
+        # treat it as local.
+        if server_addr == "0.0.0.0":
             return True
         return False
     except Exception:
