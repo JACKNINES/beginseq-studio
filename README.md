@@ -192,6 +192,8 @@ streamlit run app.py
 
 The application will open at `http://localhost:8501`.
 
+> **Tip:** By default the app runs in headless mode (no browser pop-up). To have the browser open automatically on launch, edit `.streamlit/config.toml` and set `headless = false`.
+
 > **Note on Streamlit Cloud:** Only `requirements.txt` is needed for cloud deployments. The scRNA-seq module is automatically disabled on cloud (it requires more RAM than cloud instances provide), so `requirements-scrna.txt` is not needed there.
 
 ### Optional Dependencies
