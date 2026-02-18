@@ -270,7 +270,7 @@ BeginSeq Studio/
 
 This project is released under the **MIT License**.
 
-Copyright © 2025 Elliot Ridout-Buhl.
+Copyright © 2026 Elliot Ridout-Buhl.
 
 You are free to use, modify, and distribute this software for academic, educational, or commercial purposes, provided that the original copyright notice and this permission notice are included in all copies or substantial portions of the software.
 
