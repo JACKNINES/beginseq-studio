@@ -370,7 +370,99 @@ TIME_ESTIMATION: dict = {
 }
 
 # ──────────────────────────────────────────────────────────────────────
-# 8. File configuration (I/O)
+# 8. scRNA-seq Analysis configuration
+# ──────────────────────────────────────────────────────────────────────
+SCRNA_CONFIG: dict = {
+    # ── Quality Control ───────────────────────────────────────────────
+    "qc_defaults": {
+        "min_genes": 200,
+        "max_genes": 5000,
+        "min_counts": 500,
+        "max_counts": 50000,
+        "max_pct_mt": 20.0,
+        "min_cells": 3,
+    },
+
+    # ── Normalization ─────────────────────────────────────────────────
+    "normalization": {
+        "target_sum": None,  # None = median of total counts
+    },
+
+    # ── Highly Variable Genes ────────────────────────────────────────
+    "hvg": {
+        "n_top_genes": 2000,
+        "flavor": "seurat_v3",
+        "batch_key": None,
+    },
+
+    # ── PCA ────────────────────────────────────────────────────────────
+    "pca": {
+        "n_comps": 50,
+    },
+
+    # ── Batch Effect Correction ──────────────────────────────────────
+    "batch_correction": {
+        "enabled": False,       # disabled by default
+        "method": "harmony",    # only harmony for now
+    },
+
+    # ── Neighbors & Embedding ────────────────────────────────────────
+    "neighbors": {
+        "n_neighbors": 15,
+        "n_pcs": 40,
+    },
+    "umap": {
+        "min_dist": 0.5,
+    },
+
+    # ── Clustering ────────────────────────────────────────────────────
+    "leiden": {
+        "resolution": 0.5,
+        "flavor": "igraph",
+        "n_iterations": 2,
+    },
+
+    # ── Marker Genes ──────────────────────────────────────────────────
+    "rank_genes": {
+        "method": "wilcoxon",
+        "n_genes": 25,
+    },
+
+    # ── Supported file formats (analysis accepts H5AD only) ──────────
+    "file_extensions": ["h5ad"],
+
+    # ── 10x integrator accepted formats ───────────────────────────────
+    "integrator_matrix_ext": ["mtx", "gz"],
+    "integrator_features_ext": ["tsv", "gz"],
+    "integrator_barcodes_ext": ["tsv", "gz"],
+
+    # ── Plot styling (consistent with bulk RNA-seq palette) ──────────
+    "plot": {
+        "figsize_qc": (12, 4),
+        "figsize_pca": (9, 7),
+        "figsize_umap": (9, 7),
+        "figsize_heatmap": (12, 8),
+        "figsize_dotplot": (12, 6),
+        "figsize_violin": (12, 4),
+        "color_palette": [
+            "#4CAF50", "#E53935", "#1E88E5", "#FF9800", "#9C27B0",
+            "#00BCD4", "#795548", "#607D8B", "#FFEB3B", "#E91E63",
+            "#8BC34A", "#3F51B5", "#FF5722", "#009688", "#673AB7",
+            "#CDDC39", "#2196F3", "#F44336", "#4DB6AC", "#BA68C8",
+        ],
+        "cmap_expression": "viridis",
+        "cmap_heatmap": "RdBu_r",
+        "point_size": 20,
+        "point_alpha": 0.7,
+        "dpi": 300,
+        "font_title": 14,
+        "font_axes": 12,
+        "font_legend": 9,
+    },
+}
+
+# ──────────────────────────────────────────────────────────────────────
+# 9. File configuration (I/O)
 # ──────────────────────────────────────────────────────────────────────
 FILE_CONFIG: dict = {
     # Allowed file extensions for the counts matrix.
@@ -390,7 +482,18 @@ FILE_CONFIG: dict = {
 }
 
 # ──────────────────────────────────────────────────────────────────────
-# 9. Auto-shutdown configuration
+# 9b. Local-only upload size limits (MB)
+# ──────────────────────────────────────────────────────────────────────
+# When running locally the Streamlit server.maxUploadSize is raised to
+# the maximum of these two values (5120 MB).  Each page then applies
+# its own *soft* limit so the user gets a clear warning.
+UPLOAD_LIMITS_LOCAL: dict = {
+    "bulk_rna_mb": 2048,     # 2 GB for Bulk RNA-seq
+    "scrna_mb": 5120,        # 5 GB for scRNA-seq
+}
+
+# ──────────────────────────────────────────────────────────────────────
+# 10. Auto-shutdown configuration
 # ──────────────────────────────────────────────────────────────────────
 AUTO_SHUTDOWN_CONFIG: dict = {
     # Seconds to wait after the last browser tab closes before

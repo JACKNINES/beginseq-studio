@@ -1,12 +1,12 @@
 # 🧬 BeginSeq Studio
 
-**BeginSeq Studio** is an interactive web application for RNA-seq analysis built with [Streamlit](https://streamlit.io/), created by **Elliot Ridout-Buhl**. It is designed for **beginners and researchers with no programming or command-line experience**, providing a fully code-free interface to perform differential expression analysis, build datasets from public repositories, and visualize results — all from the browser.
+**BeginSeq Studio** is an interactive web application for RNA-seq analysis built with [Streamlit](https://streamlit.io/), created by **Elliot Ridout-Buhl**. It is designed for **beginners and researchers with no programming or command-line experience**, providing a fully code-free interface to perform bulk and single-cell differential expression analysis, build datasets from public repositories, and visualize results — all from the browser.
 
 ---
 
 ## What does the app do?
 
-BeginSeq Studio is a multipage application with three integrated tools:
+BeginSeq Studio is a multipage application with three integrated modules:
 
 ### 1. Bulk RNA-seq — Differential Expression Analysis
 
@@ -19,9 +19,131 @@ Upload a raw count matrix and a metadata file, and the app runs a complete **DES
 - Interactive volcano plot, MA plot, PCA, heatmap, and gene highlighting
 - Downloadable CSV with full results (log2FoldChange, padj, baseMean, etc.)
 
-### 2. scRNA-seq Analysis *(coming soon)*
+### 2. scRNA-seq — Single-Cell RNA-seq Analysis
 
-Single-cell RNA-seq analysis pipeline — currently under development.
+A complete single-cell analysis pipeline powered by [Scanpy](https://scanpy.readthedocs.io/), following the standard Sanbomics/scanpy workflow. The module includes three data-ingestion tools and a full analysis pipeline:
+
+#### 10x File Integrator
+
+Combine 10x Genomics output files (`matrix.mtx`, `features.tsv`/`genes.tsv`, `barcodes.tsv`) into a single `.h5ad` AnnData object:
+
+- Accepts both plain-text and `.gz` compressed files
+- Automatically fixes malformed `features.tsv` files:
+  - **1-column** files (gene names only) — attempts to recover Ensembl gene IDs from an accompanying metadata file; falls back to duplicating the name
+  - **2-column** files (gene_id + gene_name) — appends the missing `Gene Expression` feature-type column
+- **Optional metadata integration** — upload a CSV/TSV with additional annotations:
+  - Auto-detects whether the metadata belongs to **cells** (`adata.obs`) or **genes** (`adata.var`) by comparing index overlap
+  - Manual override available (force obs or var)
+  - Left-join merge preserves all cells/genes
+
+#### SoupX Ambient RNA Removal
+
+Remove ambient RNA contamination from raw single-cell data using the [SoupX](https://github.com/constantAmateur/SoupX) R package (called via [rpy2](https://rpy2.github.io/)):
+
+- Requires **R** and the **SoupX** R package to be installed (see [Optional Dependencies](#optional-dependencies) below)
+- Upload raw (unfiltered) and filtered `.h5ad` files
+- Automatic contamination fraction estimation, or set a manual value
+- Download the corrected `.h5ad` ready for downstream analysis
+- *Note:* For production-grade ambient RNA removal, [CellBender](https://github.com/broadinstitute/CellBender) is recommended but requires a GPU. SoupX provides a lightweight CPU-only alternative.
+
+#### H5AD Upload
+
+Directly upload a pre-built `.h5ad` AnnData file to skip integration and proceed straight to analysis.
+
+#### Analysis Pipeline
+
+Once data is loaded (from any of the three sources above), the full scanpy pipeline runs interactively:
+
+| Step | Description |
+|------|-------------|
+| QC Annotation | Flag mitochondrial, ribosomal, and hemoglobin genes |
+| Cell & Gene Filtering | Filter by min counts, min genes, max genes, % mitochondrial |
+| Doublet Detection | Identify and remove doublets via Scrublet |
+| Normalization | Library-size normalization + log1p transform |
+| HVG Selection | Select highly variable genes (flavors: seurat, seurat_v3, cell_ranger) |
+| Scaling | Z-score scaling with optional max clipping |
+| PCA | Principal component analysis (configurable number of components) |
+| Batch Correction | Optional Harmony integration for multi-sample/multi-batch datasets |
+| Neighbors | k-nearest-neighbor graph construction |
+| UMAP | 2D UMAP embedding |
+| Leiden Clustering | Community detection with adjustable resolution |
+| Marker Genes | Rank genes per cluster (Wilcoxon, t-test, or logreg) |
+
+All parameters are configurable through the sidebar. Results can be downloaded as `.h5ad` at the end.
+
+#### Memory Considerations for the scRNA-seq Module
+
+Single-cell datasets are inherently large. The scRNA-seq module processes everything in-memory, which means **RAM is the primary bottleneck**. Below are practical guidelines for users with limited RAM (8 GB machines).
+
+##### Approximate RAM requirements
+
+| Dataset size | Peak RAM (no batch correction) | Peak RAM (with Harmony) |
+|:-------------|:-------------------------------|:------------------------|
+| 5,000 cells  | ~2 GB                          | ~2.5 GB                |
+| 10,000 cells | ~3 GB                          | ~4 GB                  |
+| 30,000 cells | ~6 GB                          | ~7 GB                  |
+| 50,000+ cells | ~10+ GB                       | ~12+ GB                |
+
+> Harmony batch correction runs in an **isolated subprocess**: PyTorch and all Harmony buffers are loaded in a child process and fully freed when it exits. This prevents the torch runtime (~400 MB) from accumulating in the main application.
+
+##### Strategies for low-RAM machines
+
+**1. Aggressive early filtering (most effective)**
+
+The biggest memory savings come from removing cells and genes early. Use stricter QC thresholds in the sidebar:
+
+| Parameter | Default | Aggressive |
+|:----------|:--------|:-----------|
+| Min genes per cell | 200 | 500 |
+| Max genes per cell | 5,000 | 3,000 |
+| Min counts per cell | 500 | 1,000 |
+| Max % mitochondrial | 20% | 10% |
+| Min cells per gene | 3 | 10 |
+
+Filtering a 50k-cell dataset down to 15k cells can reduce peak RAM by **60-70%**.
+
+**2. Subsample for exploratory runs**
+
+If you are tuning parameters (resolution, n_neighbors, etc.), consider subsampling your `.h5ad` before uploading:
+
+```python
+import scanpy as sc
+
+adata = sc.read_h5ad("full_dataset.h5ad")
+
+# Random subsample to 10k cells for fast exploration
+sc.pp.subsample(adata, n_obs=10000)
+
+adata.write_h5ad("subset_10k.h5ad")
+```
+
+Run the full dataset only after you have found satisfactory parameters on the subset.
+
+**3. Reduce HVG count**
+
+The default 2,000 highly variable genes works well for most datasets, but reducing to 1,000-1,500 can save memory during PCA and downstream steps with minimal impact on biological signal.
+
+**4. Fewer principal components**
+
+Reducing from 50 PCs to 30 PCs saves memory during PCA, Harmony, and the neighbor graph. Most biological variation is captured in the first 20-30 PCs.
+
+**5. Disable optional steps**
+
+- **Doublet detection** (Scrublet) requires temporary dense matrix operations. Disable it if your dataset was already filtered externally.
+- **Batch correction** (Harmony) adds a subprocess with its own memory footprint. Only enable it if your data contains multiple batches.
+
+**6. Close other applications**
+
+Browsers, IDEs, and other applications compete for RAM. On an 8 GB machine, close unnecessary programs before running the pipeline.
+
+##### What the pipeline already does to save memory
+
+- **Single-mask filtering**: all cell QC filters are combined into one boolean mask and applied in a single `.copy()`, avoiding 4 intermediate copies.
+- **Sparse matrix preservation**: the expression matrix stays in sparse (CSR) format throughout QC, filtering, and normalization. Densification only happens at the scaling step, and only for the HVG subset (~2k genes, not 20k+).
+- **Early HVG subsetting**: genes are subset to HVGs *before* scaling and PCA, so the dense matrix is ~10x smaller than the full gene set.
+- **Subprocess isolation for Harmony**: PyTorch + Harmony run in a `spawn` child process. When the subprocess exits, the OS reclaims all of its memory — nothing leaks into the main application.
+- **Session state cleanup**: previous analysis results are freed from memory before each new pipeline run.
+- **Aggressive garbage collection**: `gc.collect()` is called after every major pipeline step (filtering, doublets, normalization, scaling, PCA, batch correction, UMAP).
 
 ### 3. Dataset Creator — GDC/TCGA Downloader
 
@@ -37,6 +159,7 @@ Build analysis-ready datasets directly from the **NCI Genomic Data Commons (GDC)
 - Bilingual interface (English / Spanish)
 - Configurable significance thresholds and plot aesthetics via `config.py`
 - Input validation with clear, actionable error messages
+- Local file-upload limit of **5 GB** (automatically configured when running on localhost)
 
 ---
 
@@ -61,10 +184,46 @@ source venv/bin/activate  # Linux/Mac
 pip install -r requirements.txt
 
 # 4. Run the application
-streamlit run app.py 
+streamlit run app.py
 ```
 
 The application will open at `http://localhost:8501`.
+
+### Optional Dependencies
+
+The **SoupX Ambient RNA Removal** feature in the scRNA-seq module requires:
+
+1. **R** (>= 4.0) installed and available on `PATH`
+2. The **SoupX** R package — install it from R:
+   ```r
+   install.packages("SoupX")
+   ```
+3. The **rpy2** Python package (included in `requirements.txt`)
+
+If R or SoupX is not available, the rest of BeginSeq Studio works normally — only the SoupX section will show a status message explaining what is missing.
+
+---
+
+## Project Structure
+
+```
+BeginSeq Studio/
+├── app.py                  # Main Streamlit entry point
+├── config.py               # Central configuration (thresholds, plot styles)
+├── i18n.py                 # Internationalisation (EN / ES translations)
+├── runtime_utils.py        # Localhost detection & upload-limit helpers
+├── scrna_pipeline.py       # scRNA-seq backend (scanpy, SoupX, 10x integrator)
+├── requirements.txt        # Python dependencies
+├── .streamlit/
+│   └── config.toml         # Streamlit server settings (upload limits)
+├── pages/
+│   ├── 1_🧬_Bulk_RNA-seq.py    # Bulk RNA-seq DE analysis page
+│   ├── 2_🔬_scRNA-seq.py       # Single-cell analysis page
+│   └── 3_📦_Dataset_Creator.py # GDC/TCGA dataset downloader
+├── LICENSE                 # MIT License
+├── THIRD_PARTY_NOTICES.txt # Third-party dependency attributions
+└── README.md               # This file
+```
 
 ---
 
@@ -156,6 +315,18 @@ If your analysis uses the DESeq2 statistical method, please also cite:
 And the Python implementation:
 
 > Muzellec, B., Telenczuk, M., Cabeli, V. & Andreux, M. PyDESeq2: a python package for bulk RNA-seq differential expression analysis. *Bioinformatics* **39**, btad547 (2023). https://doi.org/10.1093/bioinformatics/btad547
+
+If your analysis uses the scRNA-seq module, please also cite Scanpy:
+
+> Wolf, F.A., Angerer, P. & Theis, F.J. SCANPY: large-scale single-cell gene expression data analysis. *Genome Biology* **19**, 15 (2018). https://doi.org/10.1186/s13059-017-1382-0
+
+If you use the Harmony batch correction feature, cite:
+
+> Korsunsky, I. et al. Fast, sensitive and accurate integration of single-cell data with Harmony. *Nature Methods* **16**, 1289–1296 (2019). https://doi.org/10.1038/s41592-019-0619-0
+
+If you use the SoupX ambient RNA removal feature, cite:
+
+> Young, M.D. & Behjati, S. SoupX removes ambient RNA contamination from droplet-based single-cell RNA sequencing data. *GigaScience* **9**, giaa151 (2020). https://doi.org/10.1093/gigascience/giaa151
 
 If you use TCGA data obtained through the Dataset Creator, cite:
 

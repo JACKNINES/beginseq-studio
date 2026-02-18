@@ -15,7 +15,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import time
 
-from config import STREAMLIT_CONFIG, FILE_CONFIG, DESEQ2_DEFAULTS, GENE_FILTER_DEFAULTS
+from config import STREAMLIT_CONFIG, FILE_CONFIG, DESEQ2_DEFAULTS, GENE_FILTER_DEFAULTS, UPLOAD_LIMITS_LOCAL
+from runtime_utils import is_running_locally, apply_local_upload_limit
 from data_io import read_counts_file, read_metadata_file, results_to_csv
 from validation import (
     normalize_indices,
@@ -92,6 +93,11 @@ st.set_page_config(
 )
 
 # ─────────────────────────────────────────────────────────────────────
+# Local-only: raise upload limit
+# ─────────────────────────────────────────────────────────────────────
+apply_local_upload_limit()
+
+# ─────────────────────────────────────────────────────────────────────
 # Sidebar: language selector
 # ─────────────────────────────────────────────────────────────────────
 if "language" not in st.session_state:
@@ -154,6 +160,22 @@ metadata_file = st.file_uploader(
     type=FILE_CONFIG["metadata_extensions"],
     help=t("upload.metadata_help"),
 )
+
+# ── Per-page soft file-size check (Bulk: 2 GB) ──────────────────────
+if is_running_locally():
+    _bulk_limit_mb = UPLOAD_LIMITS_LOCAL["bulk_rna_mb"]
+    for _uf, _label in [(counts_file, t("upload.counts_label")),
+                         (metadata_file, t("upload.metadata_label"))]:
+        if _uf is not None:
+            _size_mb = len(_uf.getvalue()) / (1024 * 1024)
+            if _size_mb > _bulk_limit_mb:
+                st.error(
+                    tf("upload.file_too_large",
+                       file=_uf.name,
+                       size_mb=f"{_size_mb:,.0f}",
+                       limit_mb=f"{_bulk_limit_mb:,}")
+                )
+                st.stop()
 
 # ─────────────────────────────────────────────────────────────────────
 # Analysis execution
@@ -543,7 +565,7 @@ if counts_file and metadata_file:
                              n_not_found=len(not_found_genes),
                              not_found_list=_nf_display)
                 if len(not_found_genes) > 15:
-                    _nf_msg += f" (+{len(not_found_genes) - 15} more)"
+                    _nf_msg += tf("bulk.more_genes_suffix", extra=len(not_found_genes) - 15)
                 st.warning(f"⚠️ {_nf_msg}")
 
             if found_genes:
@@ -691,7 +713,7 @@ if counts_file and metadata_file:
 
                     # Let user re-select reference and test levels
                     st.markdown("---")
-                    st.markdown(f"**⚙️ {t('params.header')}** (updated with classification)")
+                    st.markdown(f"**⚙️ {t('params.header')}** {t('bulk.params_updated_classification')}")
 
                     col_ref2, col_test2 = st.columns(2)
 
@@ -1011,7 +1033,7 @@ if counts_file and metadata_file:
                         name = t(name_key) if name_key.startswith("time.") else step_key
                         st.text(f"  {name}: {secs:.1f} s")
                     st.text(f"  {'─' * 30}")
-                    st.text(f"  Total: {_format_seconds(total_elapsed)}")
+                    st.text(f"  {tf('bulk.timing_total', elapsed=_format_seconds(total_elapsed))}")
 
                     # Compare with estimate
                     est_total = timing.get("time_estimate", {}).get("total_seconds", 0)
@@ -1084,18 +1106,18 @@ if counts_file and metadata_file:
 
             with col_f1:
                 basemean_threshold = st.number_input(
-                    "baseMean ≥", min_value=0.0, max_value=float(max_basemean),
+                    t("bulk.basemean_filter_label"), min_value=0.0, max_value=float(max_basemean),
                     value=10.0, step=1.0, help=t("results_filter.basemean_help"),
                 )
             with col_f2:
                 padj_threshold = st.number_input(
-                    "padj <", min_value=0.0001, max_value=1.0,
+                    t("bulk.padj_filter_label"), min_value=0.0001, max_value=1.0,
                     value=0.05, step=0.01, format="%.4f",
                     help=t("results_filter.padj_help"),
                 )
             with col_f3:
                 log2fc_threshold = st.number_input(
-                    "|log2FC| >", min_value=0.0, max_value=10.0,
+                    t("bulk.log2fc_filter_label"), min_value=0.0, max_value=10.0,
                     value=0.5, step=0.1, help=t("results_filter.log2fc_help"),
                 )
 

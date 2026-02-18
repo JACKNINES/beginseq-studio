@@ -73,6 +73,12 @@ TRANSLATIONS: dict = {
             "You can select the columns afterwards."
         ),
 
+        # ── File size limit ─────────────────────────────────────────────
+        "upload.file_too_large": (
+            "**File too large:** `{file}` is {size_mb} MB, "
+            "but the limit for this tool is **{limit_mb} MB**."
+        ),
+
         # ── File reading errors ───────────────────────────────────────
         "error.reading_files": "Error reading files: {error}",
 
@@ -321,7 +327,7 @@ TRANSLATIONS: dict = {
         "landing.bulk_title": "Bulk RNA-seq Classic",
         "landing.bulk_desc": "Differential expression analysis from raw count matrices using DESeq2.",
         "landing.scrna_title": "scRNA-seq Analysis",
-        "landing.scrna_desc": "Single-cell RNA-seq analysis pipeline.",
+        "landing.scrna_desc": "Single-cell RNA-seq analysis: QC, clustering, UMAP & marker genes with Scanpy.",
         "landing.dataset_title": "Dataset Creator",
         "landing.dataset_desc": "Create and prepare datasets for downstream analysis.",
         "landing.coming_soon": "Coming soon",
@@ -625,6 +631,477 @@ TRANSLATIONS: dict = {
             "Files will be saved to: `{path}`. "
             "They will persist after the matrix is built."
         ),
+
+        # ── scRNA-seq Analysis ──────────────────────────────────────────
+        "scrna.title": "scRNA-seq Analysis",
+        "scrna.subtitle": (
+            "Single-cell RNA-seq analysis pipeline powered by **Scanpy**. "
+            "Upload your data and run the complete workflow: QC, normalization, "
+            "dimensionality reduction, clustering, and marker gene identification."
+        ),
+
+        # ── AnnData Glossary ────────────────────────────────────────────
+        "scrna.glossary_title": "AnnData Object Reference",
+        "scrna.glossary_desc": (
+            "All scRNA-seq data in Scanpy is stored in an **AnnData** object. "
+            "This table describes its main components:"
+        ),
+
+        # ── 10x File Integrator ──────────────────────────────────────────
+        "scrna.integrator_title": "10x File Integrator — Build H5AD from raw files",
+        "scrna.integrator_desc": (
+            "If you have raw 10x Genomics output files (**matrix.mtx**, "
+            "**features.tsv** or **genes.tsv**, and **barcodes.tsv**), "
+            "upload them here to generate an **.h5ad** file. "
+            "Compressed files (`.gz`) are also accepted. "
+            "Files with only 2 columns (gene ID + gene name) are handled automatically."
+        ),
+        "scrna.integrator_matrix_label": "matrix.mtx(.gz)",
+        "scrna.integrator_matrix_help": "The sparse expression matrix in Matrix Market format.",
+        "scrna.integrator_features_label": "features.tsv(.gz) or genes.tsv(.gz)",
+        "scrna.integrator_features_help": (
+            "Gene annotations file. Can have 2 columns (gene_id, gene_name) "
+            "or 3 columns (gene_id, gene_name, feature_type). "
+            "2-column files are fixed automatically."
+        ),
+        "scrna.integrator_barcodes_label": "barcodes.tsv(.gz)",
+        "scrna.integrator_barcodes_help": "Cell barcode file, one barcode per line.",
+        "scrna.integrator_run": "Build H5AD",
+        "scrna.integrator_running": "Integrating 10x files into H5AD...",
+        "scrna.integrator_success": "H5AD file generated successfully! Download it below, then upload it to run the analysis.",
+        "scrna.integrator_filename_label": "File name (without extension)",
+        "scrna.integrator_filename_help": "Choose a name for the output .h5ad file.",
+        "scrna.integrator_download": "Download .h5ad",
+        "scrna.integrator_error": "Error integrating files: {error}",
+
+        # ── Integrator: optional metadata ──────────────────────────────
+        "scrna.integrator_meta_title": "Optional: Add metadata",
+        "scrna.integrator_meta_desc": (
+            "Upload a CSV or TSV file with additional annotations. "
+            "The system will automatically detect whether it matches "
+            "cell barcodes (\u2192 adata.obs) or gene IDs (\u2192 adata.var) "
+            "based on index overlap."
+        ),
+        "scrna.integrator_meta_label": "Metadata file (.csv, .tsv)",
+        "scrna.integrator_meta_help": (
+            "CSV or TSV with the first column as identifiers "
+            "(cell barcodes or gene IDs). Remaining columns will be "
+            "merged into the AnnData object automatically."
+        ),
+        "scrna.integrator_meta_auto_note": (
+            "The first column will be matched against barcodes (obs) "
+            "and gene names (var). The best match is selected automatically. "
+            "You can override below if needed."
+        ),
+        "scrna.integrator_meta_target_label": "Merge metadata into:",
+        "scrna.integrator_meta_target_auto": "Auto-detect (recommended)",
+        "scrna.integrator_meta_target_obs": "adata.obs (cell annotations)",
+        "scrna.integrator_meta_target_var": "adata.var (gene annotations)",
+        "scrna.integrator_meta_merged_obs": (
+            "Metadata merged into **adata.obs** (cell annotations). "
+            "Matched **{overlap}** of {total} IDs ({pct}% overlap with barcodes)."
+        ),
+        "scrna.integrator_meta_merged_var": (
+            "Metadata merged into **adata.var** (gene annotations). "
+            "Matched **{overlap}** of {total} IDs ({pct}% overlap with genes)."
+        ),
+        "scrna.integrator_meta_no_match": (
+            "Could not determine metadata target \u2014 less than 10% overlap "
+            "with both barcodes and gene names. "
+            "Try selecting the target manually above."
+        ),
+
+        # ── SoupX Ambient RNA Cleaner ──────────────────────────────────
+        "scrna.soupx_title": "Ambient RNA Cleaner — SoupX",
+        "scrna.soupx_disclaimer": (
+            "**Note:** CellBender (deep-learning based) generally provides superior "
+            "ambient RNA removal, but it requires a GPU and substantial computational "
+            "resources that are beyond the scope of this program. "
+            "SoupX is a lightweight alternative that runs entirely on CPU via R."
+        ),
+        "scrna.soupx_desc": (
+            "Remove ambient RNA contamination from your scRNA-seq data using **SoupX** (R package via rpy2). "
+            "SoupX estimates the contamination profile from the **raw (unfiltered)** droplets "
+            "and subtracts it from the **filtered (cell-containing)** droplets.\n\n"
+            "**You need two H5AD files:**\n"
+            "- **Raw / unfiltered**: All droplets including empty ones (e.g. `raw_feature_bc_matrix`)\n"
+            "- **Filtered**: Only cell-containing droplets (e.g. `filtered_feature_bc_matrix`)\n\n"
+            "The cleaned output can then be uploaded below for the full analysis pipeline."
+        ),
+        "scrna.soupx_missing_rpy2": (
+            "**rpy2** is not installed. Install it with: `pip install rpy2`"
+        ),
+        "scrna.soupx_missing_r": (
+            "**R** is not found on this system. SoupX requires R to be installed. "
+            "Download R from: https://cran.r-project.org/"
+        ),
+        "scrna.soupx_missing_pkg": (
+            "**SoupX** R package is not installed. Open R and run: "
+            "`install.packages('SoupX')`"
+        ),
+        "scrna.soupx_ready": "R + rpy2 + SoupX detected — ready to clean ambient RNA.",
+        "scrna.soupx_raw_label": "Raw (unfiltered) H5AD",
+        "scrna.soupx_raw_help": (
+            "H5AD containing ALL droplets (raw_feature_bc_matrix). "
+            "Includes empty droplets used to estimate the ambient RNA profile."
+        ),
+        "scrna.soupx_filt_label": "Filtered H5AD",
+        "scrna.soupx_filt_help": (
+            "H5AD containing only cell-containing droplets (filtered_feature_bc_matrix). "
+            "This is the data that will be cleaned."
+        ),
+        "scrna.soupx_auto_label": "Automatic contamination estimation",
+        "scrna.soupx_auto_help": (
+            "Let SoupX automatically estimate the contamination fraction. "
+            "Uncheck to set it manually (useful if auto-estimation fails)."
+        ),
+        "scrna.soupx_contam_label": "Contamination fraction",
+        "scrna.soupx_contam_help": (
+            "Manual contamination fraction override. "
+            "Typical values: 0.01-0.20 (1%-20%). "
+            "Higher values = more aggressive correction."
+        ),
+        "scrna.soupx_run": "Clean Ambient RNA (SoupX)",
+        "scrna.soupx_running": "Running SoupX ambient RNA removal... This may take a few minutes.",
+        "scrna.soupx_success": (
+            "Ambient RNA removed successfully! Download the cleaned H5AD below, "
+            "then upload it to run the analysis."
+        ),
+        "scrna.soupx_download": "Download soupx_cleaned.h5ad",
+        "scrna.soupx_error": "SoupX error: {error}",
+
+        # ── Upload ──────────────────────────────────────────────────────
+        "scrna.upload_header": "Upload your data",
+        "scrna.upload_label": "Upload scRNA-seq data (.h5ad)",
+        "scrna.upload_help": (
+            "Upload an **.h5ad** file (Scanpy/AnnData format).\n\n"
+            "If you have raw 10x files (matrix.mtx, features.tsv, barcodes.tsv), "
+            "use the **10x File Integrator** above to generate an .h5ad first."
+        ),
+        "scrna.data_loaded": (
+            "Data loaded: **{n_cells:,}** cells x **{n_genes:,}** genes"
+        ),
+        "scrna.preview_title": "Data Preview",
+        "scrna.preview_obs_title": "Cell Metadata (adata.obs)",
+        "scrna.preview_obs_caption": "{rows:,} cells × {cols} columns",
+        "scrna.preview_obs_empty": "No cell metadata found in this file.",
+        "scrna.preview_var_title": "Gene Metadata (adata.var)",
+        "scrna.preview_var_caption": "{rows:,} genes × {cols} columns",
+        "scrna.preview_var_empty": "No gene metadata found in this file.",
+
+        # ── QC Parameters ───────────────────────────────────────────────
+        "scrna.qc_header": "Quality Control Parameters",
+        "scrna.qc_description": (
+            "Filter out low-quality cells and rarely detected genes. "
+            "Adjust thresholds based on your QC violin plots."
+        ),
+        "scrna.min_genes_label": "Min genes per cell",
+        "scrna.min_genes_help": "Remove cells with fewer genes than this threshold.",
+        "scrna.max_genes_label": "Max genes per cell",
+        "scrna.max_genes_help": (
+            "Remove cells with more genes (potential doublets or multiplets)."
+        ),
+        "scrna.min_counts_label": "Min total counts per cell",
+        "scrna.min_counts_help": "Remove cells with too few total counts.",
+        "scrna.max_counts_label": "Max total counts per cell",
+        "scrna.max_counts_help": "Remove cells with abnormally high counts (doublets).",
+        "scrna.max_pct_mt_label": "Max % mitochondrial",
+        "scrna.max_pct_mt_help": (
+            "Cells with high mitochondrial gene percentage are often dying or stressed. "
+            "Typical threshold: 10-20%."
+        ),
+        "scrna.min_cells_label": "Min cells per gene",
+        "scrna.min_cells_help": "Remove genes detected in fewer cells than this threshold.",
+
+        # ── Pipeline Parameters ──────────────────────────────────────────
+        "scrna.params_header": "Analysis Parameters",
+        "scrna.n_hvg_label": "Number of highly variable genes",
+        "scrna.n_hvg_help": (
+            "Top N variable genes used for PCA and downstream analysis. "
+            "Standard: 2000. Increase for complex datasets."
+        ),
+        "scrna.n_pcs_label": "Number of PCs for neighbors",
+        "scrna.n_pcs_help": (
+            "Number of principal components used for the neighborhood graph. "
+            "Check the elbow plot to choose an appropriate value."
+        ),
+        "scrna.n_neighbors_label": "Number of neighbors",
+        "scrna.n_neighbors_help": (
+            "Number of nearest neighbors for the graph. "
+            "Higher = smoother clusters. Lower = finer resolution."
+        ),
+        "scrna.umap_min_dist_label": "UMAP min distance",
+        "scrna.umap_min_dist_help": (
+            "Controls how tightly UMAP packs points. "
+            "Lower values = tighter clusters. Range: 0.0 - 1.0."
+        ),
+        "scrna.leiden_res_label": "Leiden resolution",
+        "scrna.leiden_res_help": (
+            "Controls the granularity of clustering. "
+            "Higher = more clusters. Typical range: 0.1 - 2.0."
+        ),
+        "scrna.de_method_label": "DE method for markers",
+        "scrna.de_method_help": "Statistical test for identifying marker genes.",
+        "scrna.n_marker_genes_label": "Marker genes per cluster",
+        "scrna.n_marker_genes_help": "Number of top marker genes to compute per cluster.",
+        "scrna.doublet_checkbox": "Enable doublet detection (Scrublet)",
+        "scrna.doublet_help": (
+            "Detect and remove predicted doublets using Scrublet. "
+            "Recommended for 10x Genomics data."
+        ),
+
+        # ── Batch Effect Correction ──────────────────────────────────────
+        "scrna.batch_header": "Batch Effect Correction",
+        "scrna.batch_checkbox": "Enable batch correction (Harmony)",
+        "scrna.batch_help": (
+            "Correct batch effects using Harmony, which adjusts the PCA embedding "
+            "so cells from different batches integrate properly. "
+            "Enable only if your data contains multiple batches."
+        ),
+        "scrna.batch_col_label": "Batch variable column",
+        "scrna.batch_col_help": (
+            "Select the column in adata.obs that identifies the batch "
+            "(e.g. 'sample', 'donor', 'experiment')."
+        ),
+        "scrna.batch_preview": "Found **{n_batches}** batches in column `{col}`",
+        "scrna.batch_no_columns": "No suitable batch columns found in the data.",
+
+        # ── Annotation Columns ─────────────────────────────────────────────
+        "scrna.annotation_header": "Annotation Columns",
+        "scrna.celltype_col_label": "Cell type column (UMAP/PCA)",
+        "scrna.celltype_col_help": (
+            "Select a column from adata.obs containing cell type labels. "
+            "This will be used as the default color for UMAP and PCA plots. "
+            "Leave as '(none)' to use Leiden clusters."
+        ),
+        "scrna.marker_groupby_label": "Group markers by",
+        "scrna.marker_groupby_help": (
+            "Column used to group cells for marker gene analysis, "
+            "DotPlots and Heatmaps. Default: Leiden clusters."
+        ),
+
+        # ── Visualization Settings ────────────────────────────────────────
+        "scrna.viz_header": "Visualization Settings",
+        "scrna.legend_position_label": "Legend position",
+        "scrna.legend_position_help": "Choose where to place the legend on PCA and UMAP plots.",
+
+        # ── Run ──────────────────────────────────────────────────────────
+        "scrna.run_button": "Run scRNA-seq Analysis",
+        "scrna.running": "Running scRNA-seq pipeline...",
+
+        # ── Progress steps ──────────────────────────────────────────────
+        "scrna.step.qc_annotation": "Annotating QC metrics (MT, Ribo, HB genes)...",
+        "scrna.step.filtering": "Filtering cells and genes...",
+        "scrna.step.doublet_detection": "Detecting doublets (Scrublet)...",
+        "scrna.step.doublet_removal": "Removing predicted doublets...",
+        "scrna.step.normalization": "Normalizing and log-transforming...",
+        "scrna.step.hvg_selection": "Selecting highly variable genes...",
+        "scrna.step.scaling": "Scaling data...",
+        "scrna.step.pca": "Running PCA...",
+        "scrna.step.batch_correction": "Correcting batch effects (Harmony)...",
+        "scrna.step.neighbors": "Computing neighborhood graph...",
+        "scrna.step.umap": "Computing UMAP embedding...",
+        "scrna.step.clustering": "Running Leiden clustering...",
+        "scrna.step.marker_genes": "Identifying marker genes...",
+        "scrna.step.done": "Analysis complete!",
+
+        # ── Results ──────────────────────────────────────────────────────
+        "scrna.results_header": "Results",
+        "scrna.stats_title": "Analysis Summary",
+        "scrna.stats_cells": "Cells",
+        "scrna.stats_genes": "Genes",
+        "scrna.stats_clusters": "Clusters",
+        "scrna.stats_hvg": "HVGs",
+
+        "scrna.filter_stats": (
+            "Filtering: **{cells_before:,}** -> **{cells_after:,}** cells "
+            "({cells_removed:,} removed), "
+            "**{genes_before:,}** -> **{genes_after:,}** genes "
+            "({genes_removed:,} removed)"
+        ),
+        "scrna.doublet_stats": (
+            "Doublets detected: **{n_doublets}** "
+            "({doublet_rate:.1%} doublet rate)"
+        ),
+        "scrna.hvg_stats": (
+            "Highly variable genes: **{n_hvg:,}** of **{n_total:,}** total"
+        ),
+        "scrna.harmony_stats": (
+            "Batch correction (Harmony): **{n_batches}** batches "
+            "from column `{batch_key}`, using **{n_pcs}** PCs"
+        ),
+        "scrna.leiden_stats": (
+            "Leiden clustering: **{n_clusters}** clusters "
+            "(resolution = {resolution})"
+        ),
+
+        # ── Visualization tabs ──────────────────────────────────────────
+        "scrna.tab_qc": "QC Metrics",
+        "scrna.tab_hvg": "Variable Genes",
+        "scrna.tab_pca": "PCA",
+        "scrna.tab_umap": "UMAP",
+        "scrna.tab_markers": "Marker Genes",
+
+        "scrna.umap_color_label": "Color UMAP by",
+        "scrna.umap_color_help": "Select a metadata column or gene to color the UMAP plot.",
+        "scrna.gene_search_label": "Search gene",
+        "scrna.gene_search_help": "Type a gene name to visualize its expression on UMAP.",
+        "scrna.gene_not_found": "Gene '{gene}' not found in the dataset.",
+        "scrna.marker_cluster_label": "Select cluster",
+        "scrna.marker_n_genes_label": "Top N genes to show",
+
+        # ── Downloads ───────────────────────────────────────────────────
+        "scrna.download_header": "Download Results",
+        "scrna.download_h5ad": "Download H5AD (full analysis)",
+        "scrna.download_h5ad_help": (
+            "Download the complete AnnData object (.h5ad) with all "
+            "analysis results, embeddings, and metadata."
+        ),
+        "scrna.download_markers_csv": "Download marker genes (CSV)",
+        "scrna.download_obs_csv": "Download cell metadata (CSV)",
+        "scrna.download_png": "Download PNG",
+        "scrna.download_svg": "Download SVG",
+
+        # ── Errors ──────────────────────────────────────────────────────
+        "scrna.error_loading": "Error loading data: {error}",
+        "scrna.error_pipeline": "Error during analysis: {error}",
+        "scrna.error_lapack": (
+            "⚠️ A numerical instability was detected during the analysis "
+            "(near-singular matrix). This can happen with certain datasets."
+        ),
+        "scrna.error_lapack_hint": (
+            "💡 **Suggestions:** Try reducing the number of PCs, disabling "
+            "batch correction, changing the HVG count, or adjusting QC "
+            "filters to remove low-quality cells/genes."
+        ),
+        "scrna.error_no_cells": (
+            "No cells remain after filtering. Try relaxing the QC thresholds."
+        ),
+
+        # ── Remote access gate ──────────────────────────────────────────
+        "scrna.remote_blocked": (
+            "This feature is only available when running locally. "
+            "If you would like to use this feature, visit: "
+            "https://github.com/JACKNINES/beginseq-studio"
+        ),
+
+        # ── Page titles (browser tab) ─────────────────────────────────────
+        "page_title.bulk": "Bulk RNA-seq",
+        "page_title.scrna": "scRNA-seq Analysis",
+        "page_title.dataset": "Dataset Creator",
+
+        # ── Hardcoded UI strings — Bulk RNA-seq ───────────────────────────
+        "bulk.step_caption": "Step {step}/{total}: {msg}",
+        "bulk.params_updated_classification": "(updated with classification)",
+        "bulk.more_genes_suffix": " (+{extra} more)",
+        "bulk.timing_total": "Total: {elapsed}",
+        "bulk.basemean_filter_label": "baseMean ≥",
+        "bulk.padj_filter_label": "padj <",
+        "bulk.log2fc_filter_label": "|log2FC| >",
+
+        # ── Hardcoded UI strings — scRNA-seq page ─────────────────────────
+        "scrna.cells_x_genes": "{n_cells:,} cells × {n_genes:,} genes",
+        "scrna.step_caption": "Step {step}/{total}: {msg}",
+        "scrna.option_none": "(none)",
+        "scrna.no_markers_info": "No marker genes computed.",
+        "scrna.gene_search_placeholder": "e.g. CD3D, MS4A1, NKG7",
+        "scrna.dl_suffix_scatter": "(Scatter)",
+        "scrna.dl_suffix_elbow": "(Elbow)",
+        "scrna.dl_suffix_pca": "(PCA)",
+        "scrna.dl_suffix_markers": "(Markers)",
+        "scrna.dl_suffix_dotplot": "(Dotplot)",
+        "scrna.dl_suffix_heatmap": "(Heatmap)",
+
+        # ── AnnData glossary table (scRNA-seq page) ───────────────────────
+        "scrna.glossary_col_element": "Element",
+        "scrna.glossary_col_stands_for": "What it stands for",
+        "scrna.glossary_col_contains": "What it contains",
+        "scrna.glossary_x_name": "Expression matrix",
+        "scrna.glossary_obs_name": "Observations (cells)",
+        "scrna.glossary_var_name": "Variables (genes)",
+        "scrna.glossary_obsm_name": "Observation multi-dimensional",
+        "scrna.glossary_uns_name": "Unstructured annotations",
+        "scrna.glossary_layers_name": "Alternative matrix layers",
+        "scrna.glossary_x_desc": (
+            "The gene expression matrix (cells x genes). "
+            "Normalized/log-transformed values after preprocessing."
+        ),
+        "scrna.glossary_obs_desc": (
+            "Metadata for each cell: cluster labels, QC metrics "
+            "(n_genes, total_counts, pct_mt), sample IDs, cell types."
+        ),
+        "scrna.glossary_var_desc": (
+            "Metadata for each gene: gene names, highly_variable flag, "
+            "mean expression, dispersions."
+        ),
+        "scrna.glossary_obsm_desc": (
+            "Cell-level embeddings and coordinates: PCA (X_pca), "
+            "UMAP (X_umap), t-SNE (X_tsne)."
+        ),
+        "scrna.glossary_uns_desc": (
+            "General analysis results: clustering parameters, marker "
+            "gene rankings, color palettes, method settings."
+        ),
+        "scrna.glossary_layers_desc": (
+            "Alternative representations of X: raw counts ('counts'), "
+            "scaled data. All same shape as X."
+        ),
+
+        # ── Plot labels — scRNA visualization ──────────────────────────────
+        "plot.qc_title": "Quality Control Metrics",
+        "plot.qc_scatter_title": "QC Scatter",
+        "plot.hvg_title": "Highly Variable Genes",
+        "plot.hvg_label": "Highly Variable",
+        "plot.hvg_other_label": "Other",
+        "plot.hvg_xlabel": "Mean expression",
+        "plot.hvg_ylabel_disp": "Normalized dispersion",
+        "plot.hvg_ylabel_count": "Number of genes",
+        "plot.pca_elbow_title": "PCA Variance Ratio (Elbow Plot)",
+        "plot.pca_elbow_xlabel": "Principal Component",
+        "plot.pca_elbow_ylabel": "Variance Ratio",
+        "plot.pca_embed_title": "PCA Embedding",
+        "plot.umap_xlabel": "UMAP1",
+        "plot.umap_ylabel": "UMAP2",
+        "plot.umap_title_prefix": "UMAP — {color}",
+        "plot.marker_ranking_title": "Top Marker Genes per {groupby}",
+        "plot.marker_score_label": "Score",
+        "plot.marker_no_data": "No data",
+        "plot.marker_no_genes": "No marker genes found",
+        "plot.dotplot_xlabel": "Genes",
+        "plot.dotplot_ylabel": "Cluster",
+        "plot.dotplot_title": "Dot Plot — Marker Genes",
+        "plot.dotplot_cbar_label": "Mean expression",
+        "plot.dotplot_size_legend": "% expressing",
+        "plot.heatmap_no_genes": "No marker genes to display",
+        "plot.heatmap_cluster_title": "Cluster",
+        "plot.heatmap_xlabel": "Cells (ordered by cluster)",
+        "plot.heatmap_cbar_label": "Expression",
+        "plot.heatmap_title": "Marker Gene Heatmap",
+
+        # ── Plot labels — Bulk visualization ───────────────────────────────
+        "plot.not_significant": "Not significant",
+        "plot.up_regulated": "Up-regulated",
+        "plot.down_regulated": "Down-regulated",
+        "plot.volcano_summary": (
+            "Total genes: {n_total:,}\n"
+            "Significant: {n_sig:,} ({n_up:,} up · {n_down:,} down)"
+        ),
+        "plot.volcano_shrunk_suffix": "  [shrunk]",
+        "plot.highlight_other_genes": "Other genes ({count:,})",
+        "plot.highlight_highlighted": "Highlighted ({count:,})",
+        "plot.highlight_title": "Volcano Plot — Highlighted Genes",
+        "plot.highlight_info": "Highlighted: {n_found}",
+        "plot.highlight_not_found": "Not found: {n_not_found}",
+        "plot.pca_axis_variance": "PC{n} ({pct:.1f}% variance)",
+        "plot.ma_not_significant": "Not significant",
+        "plot.ma_up_regulated": "Up-regulated",
+        "plot.ma_down_regulated": "Down-regulated",
+        "plot.ma_summary": (
+            "Total: {n_total:,} genes\n"
+            "Significant: {n_sig:,} ({n_up:,} up · {n_down:,} down)"
+        ),
+        "plot.heatmap_zscore_label": "Z-score",
+        "plot.heatmap_condition_title": "Condition",
     },
 
     # ──────────────────────────────────────────────────────────────────
@@ -678,6 +1155,12 @@ TRANSLATIONS: dict = {
             "Debe tener una columna con los nombres de muestras que coincidan "
             "con las columnas de la matriz de conteos, y al menos una columna de "
             "condicion experimental. Puedes seleccionar las columnas despues."
+        ),
+
+        # ── Limite de tamano ────────────────────────────────────────────
+        "upload.file_too_large": (
+            "**Archivo demasiado grande:** `{file}` pesa {size_mb} MB, "
+            "pero el limite para esta herramienta es **{limit_mb} MB**."
         ),
 
         # ── Errores de lectura ────────────────────────────────────────
@@ -929,7 +1412,7 @@ TRANSLATIONS: dict = {
         "landing.bulk_title": "Bulk RNA-seq Clasico",
         "landing.bulk_desc": "Analisis de expresion diferencial a partir de matrices de conteos crudos usando DESeq2.",
         "landing.scrna_title": "Analisis scRNA-seq",
-        "landing.scrna_desc": "Pipeline de analisis de RNA-seq de celula unica.",
+        "landing.scrna_desc": "Analisis scRNA-seq: QC, clustering, UMAP y genes marcadores con Scanpy.",
         "landing.dataset_title": "Creador de Datasets",
         "landing.dataset_desc": "Crea y prepara datasets para analisis posteriores.",
         "landing.coming_soon": "Proximamente",
@@ -1233,6 +1716,477 @@ TRANSLATIONS: dict = {
             "Los archivos se guardaran en: `{path}`. "
             "Persistiran despues de construir la matriz."
         ),
+
+        # ── Analisis scRNA-seq ──────────────────────────────────────────
+        "scrna.title": "Analisis scRNA-seq",
+        "scrna.subtitle": (
+            "Pipeline de analisis de RNA-seq de celula unica con **Scanpy**. "
+            "Sube tus datos y ejecuta el flujo completo: QC, normalizacion, "
+            "reduccion de dimensionalidad, clustering e identificacion de genes marcadores."
+        ),
+
+        # ── Glosario AnnData ────────────────────────────────────────────
+        "scrna.glossary_title": "Referencia del Objeto AnnData",
+        "scrna.glossary_desc": (
+            "Todos los datos de scRNA-seq en Scanpy se almacenan en un objeto **AnnData**. "
+            "Esta tabla describe sus componentes principales:"
+        ),
+
+        # ── Integrador de archivos 10x ──────────────────────────────────
+        "scrna.integrator_title": "Integrador de archivos 10x — Generar H5AD desde archivos crudos",
+        "scrna.integrator_desc": (
+            "Si tienes archivos crudos de 10x Genomics (**matrix.mtx**, "
+            "**features.tsv** o **genes.tsv**, y **barcodes.tsv**), "
+            "subrelos aqui para generar un archivo **.h5ad**. "
+            "Se aceptan archivos comprimidos (`.gz`). "
+            "Archivos con solo 2 columnas (gene ID + nombre) se manejan automaticamente."
+        ),
+        "scrna.integrator_matrix_label": "matrix.mtx(.gz)",
+        "scrna.integrator_matrix_help": "La matriz de expresion dispersa en formato Matrix Market.",
+        "scrna.integrator_features_label": "features.tsv(.gz) o genes.tsv(.gz)",
+        "scrna.integrator_features_help": (
+            "Archivo de anotaciones de genes. Puede tener 2 columnas (gene_id, gene_name) "
+            "o 3 columnas (gene_id, gene_name, feature_type). "
+            "Archivos de 2 columnas se corrigen automaticamente."
+        ),
+        "scrna.integrator_barcodes_label": "barcodes.tsv(.gz)",
+        "scrna.integrator_barcodes_help": "Archivo de barcodes celulares, un barcode por linea.",
+        "scrna.integrator_run": "Generar H5AD",
+        "scrna.integrator_running": "Integrando archivos 10x en H5AD...",
+        "scrna.integrator_success": "Archivo H5AD generado exitosamente! Descargalo abajo y luego subelo para ejecutar el analisis.",
+        "scrna.integrator_filename_label": "Nombre del archivo (sin extensión)",
+        "scrna.integrator_filename_help": "Elige un nombre para el archivo .h5ad de salida.",
+        "scrna.integrator_download": "Descargar .h5ad",
+        "scrna.integrator_error": "Error al integrar archivos: {error}",
+
+        # ── Integrador: metadata opcional ──────────────────────────────
+        "scrna.integrator_meta_title": "Opcional: Agregar metadata",
+        "scrna.integrator_meta_desc": (
+            "Sube un archivo CSV o TSV con anotaciones adicionales. "
+            "El sistema detectara automaticamente si coincide con "
+            "barcodes de celulas (\u2192 adata.obs) o IDs de genes (\u2192 adata.var) "
+            "basandose en la superposicion de indices."
+        ),
+        "scrna.integrator_meta_label": "Archivo de metadata (.csv, .tsv)",
+        "scrna.integrator_meta_help": (
+            "CSV o TSV con la primera columna como identificadores "
+            "(barcodes celulares o IDs de genes). Las columnas restantes "
+            "se fusionaran en el objeto AnnData automaticamente."
+        ),
+        "scrna.integrator_meta_auto_note": (
+            "La primera columna se comparara con los barcodes (obs) "
+            "y los nombres de genes (var). Se selecciona automaticamente "
+            "la mejor coincidencia. Puedes sobreescribir abajo si es necesario."
+        ),
+        "scrna.integrator_meta_target_label": "Fusionar metadata en:",
+        "scrna.integrator_meta_target_auto": "Auto-detectar (recomendado)",
+        "scrna.integrator_meta_target_obs": "adata.obs (anotaciones de celulas)",
+        "scrna.integrator_meta_target_var": "adata.var (anotaciones de genes)",
+        "scrna.integrator_meta_merged_obs": (
+            "Metadata fusionada en **adata.obs** (anotaciones de celulas). "
+            "Coincidieron **{overlap}** de {total} IDs ({pct}% superposicion con barcodes)."
+        ),
+        "scrna.integrator_meta_merged_var": (
+            "Metadata fusionada en **adata.var** (anotaciones de genes). "
+            "Coincidieron **{overlap}** de {total} IDs ({pct}% superposicion con genes)."
+        ),
+        "scrna.integrator_meta_no_match": (
+            "No se pudo determinar el destino de la metadata \u2014 menos de 10% "
+            "de superposicion con barcodes y nombres de genes. "
+            "Intenta seleccionar el destino manualmente arriba."
+        ),
+
+        # ── SoupX Limpieza de RNA Ambiental ────────────────────────────
+        "scrna.soupx_title": "Limpieza de RNA Ambiental — SoupX",
+        "scrna.soupx_disclaimer": (
+            "**Nota:** CellBender (basado en deep learning) generalmente proporciona una "
+            "remocion de RNA ambiental superior, pero requiere GPU y recursos computacionales "
+            "sustanciales que estan fuera del alcance de este programa. "
+            "SoupX es una alternativa ligera que se ejecuta completamente en CPU via R."
+        ),
+        "scrna.soupx_desc": (
+            "Remueve la contaminacion por RNA ambiental de tus datos scRNA-seq usando **SoupX** (paquete R via rpy2). "
+            "SoupX estima el perfil de contaminacion a partir de las gotas **crudas (sin filtrar)** "
+            "y lo sustrae de las gotas **filtradas (que contienen celulas)**.\n\n"
+            "**Necesitas dos archivos H5AD:**\n"
+            "- **Crudo / sin filtrar**: Todas las gotas incluyendo vacias (ej. `raw_feature_bc_matrix`)\n"
+            "- **Filtrado**: Solo gotas con celulas (ej. `filtered_feature_bc_matrix`)\n\n"
+            "La salida limpia puede subirse abajo para el pipeline completo de analisis."
+        ),
+        "scrna.soupx_missing_rpy2": (
+            "**rpy2** no esta instalado. Instalalo con: `pip install rpy2`"
+        ),
+        "scrna.soupx_missing_r": (
+            "**R** no se encontro en este sistema. SoupX requiere que R este instalado. "
+            "Descarga R desde: https://cran.r-project.org/"
+        ),
+        "scrna.soupx_missing_pkg": (
+            "**SoupX** paquete de R no esta instalado. Abre R y ejecuta: "
+            "`install.packages('SoupX')`"
+        ),
+        "scrna.soupx_ready": "R + rpy2 + SoupX detectados — listo para limpiar RNA ambiental.",
+        "scrna.soupx_raw_label": "H5AD crudo (sin filtrar)",
+        "scrna.soupx_raw_help": (
+            "H5AD con TODAS las gotas (raw_feature_bc_matrix). "
+            "Incluye gotas vacias usadas para estimar el perfil de RNA ambiental."
+        ),
+        "scrna.soupx_filt_label": "H5AD filtrado",
+        "scrna.soupx_filt_help": (
+            "H5AD con solo gotas que contienen celulas (filtered_feature_bc_matrix). "
+            "Estos son los datos que seran limpiados."
+        ),
+        "scrna.soupx_auto_label": "Estimacion automatica de contaminacion",
+        "scrna.soupx_auto_help": (
+            "Permite que SoupX estime automaticamente la fraccion de contaminacion. "
+            "Desmarca para configurarla manualmente (util si la estimacion automatica falla)."
+        ),
+        "scrna.soupx_contam_label": "Fraccion de contaminacion",
+        "scrna.soupx_contam_help": (
+            "Override manual de la fraccion de contaminacion. "
+            "Valores tipicos: 0.01-0.20 (1%-20%). "
+            "Valores mas altos = correccion mas agresiva."
+        ),
+        "scrna.soupx_run": "Limpiar RNA Ambiental (SoupX)",
+        "scrna.soupx_running": "Ejecutando remocion de RNA ambiental con SoupX... Esto puede tardar algunos minutos.",
+        "scrna.soupx_success": (
+            "RNA ambiental removido exitosamente! Descarga el H5AD limpio abajo, "
+            "luego subelo para ejecutar el analisis."
+        ),
+        "scrna.soupx_download": "Descargar soupx_cleaned.h5ad",
+        "scrna.soupx_error": "Error de SoupX: {error}",
+
+        # ── Carga de datos ──────────────────────────────────────────────
+        "scrna.upload_header": "Sube tus datos",
+        "scrna.upload_label": "Subir datos scRNA-seq (.h5ad)",
+        "scrna.upload_help": (
+            "Sube un archivo **.h5ad** (formato Scanpy/AnnData).\n\n"
+            "Si tienes archivos crudos de 10x (matrix.mtx, features.tsv, barcodes.tsv), "
+            "usa el **Integrador de archivos 10x** de arriba para generar un .h5ad primero."
+        ),
+        "scrna.data_loaded": (
+            "Datos cargados: **{n_cells:,}** celulas x **{n_genes:,}** genes"
+        ),
+        "scrna.preview_title": "Vista Previa de Datos",
+        "scrna.preview_obs_title": "Metadata de Células (adata.obs)",
+        "scrna.preview_obs_caption": "{rows:,} células × {cols} columnas",
+        "scrna.preview_obs_empty": "No se encontró metadata de células en este archivo.",
+        "scrna.preview_var_title": "Metadata de Genes (adata.var)",
+        "scrna.preview_var_caption": "{rows:,} genes × {cols} columnas",
+        "scrna.preview_var_empty": "No se encontró metadata de genes en este archivo.",
+
+        # ── Parametros QC ───────────────────────────────────────────────
+        "scrna.qc_header": "Parametros de Control de Calidad",
+        "scrna.qc_description": (
+            "Filtra celulas de baja calidad y genes poco detectados. "
+            "Ajusta los umbrales segun tus violin plots de QC."
+        ),
+        "scrna.min_genes_label": "Min genes por celula",
+        "scrna.min_genes_help": "Elimina celulas con menos genes que este umbral.",
+        "scrna.max_genes_label": "Max genes por celula",
+        "scrna.max_genes_help": (
+            "Elimina celulas con demasiados genes (posibles dobletes o multipletes)."
+        ),
+        "scrna.min_counts_label": "Min conteos totales por celula",
+        "scrna.min_counts_help": "Elimina celulas con muy pocos conteos totales.",
+        "scrna.max_counts_label": "Max conteos totales por celula",
+        "scrna.max_counts_help": "Elimina celulas con conteos anormalmente altos (dobletes).",
+        "scrna.max_pct_mt_label": "Max % mitocondrial",
+        "scrna.max_pct_mt_help": (
+            "Celulas con alto porcentaje de genes mitocondriales suelen estar danadas o estresadas. "
+            "Umbral tipico: 10-20%."
+        ),
+        "scrna.min_cells_label": "Min celulas por gen",
+        "scrna.min_cells_help": "Elimina genes detectados en menos celulas que este umbral.",
+
+        # ── Parametros del pipeline ──────────────────────────────────────
+        "scrna.params_header": "Parametros del Analisis",
+        "scrna.n_hvg_label": "Numero de genes altamente variables",
+        "scrna.n_hvg_help": (
+            "Top N genes variables usados para PCA y analisis posteriores. "
+            "Estandar: 2000. Aumentar para datasets complejos."
+        ),
+        "scrna.n_pcs_label": "Numero de PCs para vecinos",
+        "scrna.n_pcs_help": (
+            "Numero de componentes principales usados para el grafo de vecindad. "
+            "Revisa el elbow plot para elegir un valor apropiado."
+        ),
+        "scrna.n_neighbors_label": "Numero de vecinos",
+        "scrna.n_neighbors_help": (
+            "Numero de vecinos mas cercanos para el grafo. "
+            "Mayor = clusters mas suaves. Menor = mayor resolucion."
+        ),
+        "scrna.umap_min_dist_label": "Distancia minima UMAP",
+        "scrna.umap_min_dist_help": (
+            "Controla que tan compactamente UMAP agrupa los puntos. "
+            "Valores bajos = clusters mas compactos. Rango: 0.0 - 1.0."
+        ),
+        "scrna.leiden_res_label": "Resolucion de Leiden",
+        "scrna.leiden_res_help": (
+            "Controla la granularidad del clustering. "
+            "Mayor = mas clusters. Rango tipico: 0.1 - 2.0."
+        ),
+        "scrna.de_method_label": "Metodo DE para marcadores",
+        "scrna.de_method_help": "Test estadistico para identificar genes marcadores.",
+        "scrna.n_marker_genes_label": "Genes marcadores por cluster",
+        "scrna.n_marker_genes_help": "Numero de genes marcadores top a calcular por cluster.",
+        "scrna.doublet_checkbox": "Habilitar deteccion de dobletes (Scrublet)",
+        "scrna.doublet_help": (
+            "Detecta y remueve dobletes predichos usando Scrublet. "
+            "Recomendado para datos de 10x Genomics."
+        ),
+
+        # ── Corrección de Efectos de Lote ────────────────────────────────
+        "scrna.batch_header": "Corrección de Efectos de Lote",
+        "scrna.batch_checkbox": "Habilitar corrección de lote (Harmony)",
+        "scrna.batch_help": (
+            "Corrige efectos de lote usando Harmony, que ajusta el embedding PCA "
+            "para que las células de diferentes lotes se integren correctamente. "
+            "Habilitar solo si los datos contienen múltiples lotes."
+        ),
+        "scrna.batch_col_label": "Columna de variable de lote",
+        "scrna.batch_col_help": (
+            "Selecciona la columna en adata.obs que identifica el lote "
+            "(por ejemplo, 'sample', 'donor', 'experiment')."
+        ),
+        "scrna.batch_preview": "Encontrados **{n_batches}** lotes en la columna `{col}`",
+        "scrna.batch_no_columns": "No se encontraron columnas de lote adecuadas.",
+
+        # ── Columnas de Anotación ──────────────────────────────────────────
+        "scrna.annotation_header": "Columnas de Anotación",
+        "scrna.celltype_col_label": "Columna de tipo celular (UMAP/PCA)",
+        "scrna.celltype_col_help": (
+            "Selecciona una columna de adata.obs con etiquetas de tipo celular. "
+            "Se usará como color predeterminado en los gráficos UMAP y PCA. "
+            "Deja '(none)' para usar clusters Leiden."
+        ),
+        "scrna.marker_groupby_label": "Agrupar marcadores por",
+        "scrna.marker_groupby_help": (
+            "Columna usada para agrupar células en el análisis de marcadores, "
+            "DotPlots y Heatmaps. Por defecto: clusters Leiden."
+        ),
+
+        # ── Opciones de Visualización ──────────────────────────────────────
+        "scrna.viz_header": "Opciones de Visualización",
+        "scrna.legend_position_label": "Posición de leyenda",
+        "scrna.legend_position_help": "Elige dónde colocar la leyenda en los gráficos PCA y UMAP.",
+
+        # ── Ejecucion ───────────────────────────────────────────────────
+        "scrna.run_button": "Ejecutar Analisis scRNA-seq",
+        "scrna.running": "Ejecutando pipeline scRNA-seq...",
+
+        # ── Pasos de progreso ───────────────────────────────────────────
+        "scrna.step.qc_annotation": "Anotando metricas de QC (genes MT, Ribo, HB)...",
+        "scrna.step.filtering": "Filtrando celulas y genes...",
+        "scrna.step.doublet_detection": "Detectando dobletes (Scrublet)...",
+        "scrna.step.doublet_removal": "Removiendo dobletes predichos...",
+        "scrna.step.normalization": "Normalizando y log-transformando...",
+        "scrna.step.hvg_selection": "Seleccionando genes altamente variables...",
+        "scrna.step.scaling": "Escalando datos...",
+        "scrna.step.pca": "Ejecutando PCA...",
+        "scrna.step.batch_correction": "Corrigiendo efectos de lote (Harmony)...",
+        "scrna.step.neighbors": "Calculando grafo de vecindad...",
+        "scrna.step.umap": "Calculando embedding UMAP...",
+        "scrna.step.clustering": "Ejecutando clustering Leiden...",
+        "scrna.step.marker_genes": "Identificando genes marcadores...",
+        "scrna.step.done": "Analisis completo!",
+
+        # ── Resultados ──────────────────────────────────────────────────
+        "scrna.results_header": "Resultados",
+        "scrna.stats_title": "Resumen del Analisis",
+        "scrna.stats_cells": "Celulas",
+        "scrna.stats_genes": "Genes",
+        "scrna.stats_clusters": "Clusters",
+        "scrna.stats_hvg": "HVGs",
+
+        "scrna.filter_stats": (
+            "Filtrado: **{cells_before:,}** -> **{cells_after:,}** celulas "
+            "({cells_removed:,} removidas), "
+            "**{genes_before:,}** -> **{genes_after:,}** genes "
+            "({genes_removed:,} removidos)"
+        ),
+        "scrna.doublet_stats": (
+            "Dobletes detectados: **{n_doublets}** "
+            "({doublet_rate:.1%} tasa de dobletes)"
+        ),
+        "scrna.hvg_stats": (
+            "Genes altamente variables: **{n_hvg:,}** de **{n_total:,}** totales"
+        ),
+        "scrna.harmony_stats": (
+            "Corrección de lote (Harmony): **{n_batches}** lotes "
+            "de la columna `{batch_key}`, usando **{n_pcs}** PCs"
+        ),
+        "scrna.leiden_stats": (
+            "Clustering Leiden: **{n_clusters}** clusters "
+            "(resolucion = {resolution})"
+        ),
+
+        # ── Pestanas de visualizacion ───────────────────────────────────
+        "scrna.tab_qc": "Metricas QC",
+        "scrna.tab_hvg": "Genes Variables",
+        "scrna.tab_pca": "PCA",
+        "scrna.tab_umap": "UMAP",
+        "scrna.tab_markers": "Genes Marcadores",
+
+        "scrna.umap_color_label": "Colorear UMAP por",
+        "scrna.umap_color_help": "Selecciona una columna de metadata o gen para colorear el UMAP.",
+        "scrna.gene_search_label": "Buscar gen",
+        "scrna.gene_search_help": "Escribe un nombre de gen para visualizar su expresion en UMAP.",
+        "scrna.gene_not_found": "Gen '{gene}' no encontrado en el dataset.",
+        "scrna.marker_cluster_label": "Seleccionar cluster",
+        "scrna.marker_n_genes_label": "Top N genes a mostrar",
+
+        # ── Descargas ───────────────────────────────────────────────────
+        "scrna.download_header": "Descargar Resultados",
+        "scrna.download_h5ad": "Descargar H5AD (analisis completo)",
+        "scrna.download_h5ad_help": (
+            "Descarga el objeto AnnData completo (.h5ad) con todos los "
+            "resultados del analisis, embeddings y metadatos."
+        ),
+        "scrna.download_markers_csv": "Descargar genes marcadores (CSV)",
+        "scrna.download_obs_csv": "Descargar metadatos celulares (CSV)",
+        "scrna.download_png": "Descargar PNG",
+        "scrna.download_svg": "Descargar SVG",
+
+        # ── Errores ─────────────────────────────────────────────────────
+        "scrna.error_loading": "Error al cargar datos: {error}",
+        "scrna.error_pipeline": "Error durante el analisis: {error}",
+        "scrna.error_lapack": (
+            "⚠️ Se detectó una inestabilidad numérica durante el análisis "
+            "(matriz casi singular). Esto puede ocurrir con ciertos datasets."
+        ),
+        "scrna.error_lapack_hint": (
+            "💡 **Sugerencias:** Intenta reducir el número de PCs, desactivar "
+            "la corrección de lote, cambiar la cantidad de HVGs, o ajustar "
+            "los filtros de QC para eliminar células/genes de baja calidad."
+        ),
+        "scrna.error_no_cells": (
+            "No quedan celulas despues del filtrado. Intenta relajar los umbrales de QC."
+        ),
+
+        # ── Acceso remoto ───────────────────────────────────────────────
+        "scrna.remote_blocked": (
+            "Esta funcion solo esta disponible cuando se ejecuta localmente. "
+            "Si deseas utilizar esta funcion, visita: "
+            "https://github.com/JACKNINES/beginseq-studio"
+        ),
+
+        # ── Títulos de página (pestaña del navegador) ──────────────────
+        "page_title.bulk": "Bulk RNA-seq",
+        "page_title.scrna": "Análisis scRNA-seq",
+        "page_title.dataset": "Creador de Datasets",
+
+        # ── Strings hardcodeados — Bulk RNA-seq ────────────────────────
+        "bulk.step_caption": "Paso {step}/{total}: {msg}",
+        "bulk.params_updated_classification": "(actualizado con clasificación)",
+        "bulk.more_genes_suffix": " (+{extra} más)",
+        "bulk.timing_total": "Total: {elapsed}",
+        "bulk.basemean_filter_label": "baseMean ≥",
+        "bulk.padj_filter_label": "padj <",
+        "bulk.log2fc_filter_label": "|log2FC| >",
+
+        # ── Strings hardcodeados — página scRNA-seq ────────────────────
+        "scrna.cells_x_genes": "{n_cells:,} células × {n_genes:,} genes",
+        "scrna.step_caption": "Paso {step}/{total}: {msg}",
+        "scrna.option_none": "(ninguno)",
+        "scrna.no_markers_info": "No se calcularon genes marcadores.",
+        "scrna.gene_search_placeholder": "ej. CD3D, MS4A1, NKG7",
+        "scrna.dl_suffix_scatter": "(Dispersión)",
+        "scrna.dl_suffix_elbow": "(Codo)",
+        "scrna.dl_suffix_pca": "(PCA)",
+        "scrna.dl_suffix_markers": "(Marcadores)",
+        "scrna.dl_suffix_dotplot": "(Dotplot)",
+        "scrna.dl_suffix_heatmap": "(Mapa de calor)",
+
+        # ── Tabla glosario AnnData (página scRNA-seq) ─────────────────
+        "scrna.glossary_col_element": "Elemento",
+        "scrna.glossary_col_stands_for": "Qué representa",
+        "scrna.glossary_col_contains": "Qué contiene",
+        "scrna.glossary_x_name": "Matriz de expresión",
+        "scrna.glossary_obs_name": "Observaciones (células)",
+        "scrna.glossary_var_name": "Variables (genes)",
+        "scrna.glossary_obsm_name": "Multidimensional de observaciones",
+        "scrna.glossary_uns_name": "Anotaciones no estructuradas",
+        "scrna.glossary_layers_name": "Capas de matrices alternativas",
+        "scrna.glossary_x_desc": (
+            "La matriz de expresión génica (células x genes). "
+            "Valores normalizados/log-transformados después del preprocesamiento."
+        ),
+        "scrna.glossary_obs_desc": (
+            "Metadatos de cada célula: etiquetas de cluster, métricas QC "
+            "(n_genes, total_counts, pct_mt), IDs de muestra, tipos celulares."
+        ),
+        "scrna.glossary_var_desc": (
+            "Metadatos de cada gen: nombres de genes, flag highly_variable, "
+            "expresión media, dispersiones."
+        ),
+        "scrna.glossary_obsm_desc": (
+            "Embeddings y coordenadas a nivel celular: PCA (X_pca), "
+            "UMAP (X_umap), t-SNE (X_tsne)."
+        ),
+        "scrna.glossary_uns_desc": (
+            "Resultados generales del análisis: parámetros de clustering, "
+            "rankings de genes marcadores, paletas de colores, configuraciones."
+        ),
+        "scrna.glossary_layers_desc": (
+            "Representaciones alternativas de X: conteos crudos ('counts'), "
+            "datos escalados. Misma dimensión que X."
+        ),
+
+        # ── Etiquetas de gráficos — visualización scRNA ───────────────
+        "plot.qc_title": "Métricas de Control de Calidad",
+        "plot.qc_scatter_title": "Dispersión QC",
+        "plot.hvg_title": "Genes Altamente Variables",
+        "plot.hvg_label": "Altamente Variable",
+        "plot.hvg_other_label": "Otros",
+        "plot.hvg_xlabel": "Expresión media",
+        "plot.hvg_ylabel_disp": "Dispersión normalizada",
+        "plot.hvg_ylabel_count": "Número de genes",
+        "plot.pca_elbow_title": "Ratio de Varianza PCA (Gráfico de Codo)",
+        "plot.pca_elbow_xlabel": "Componente Principal",
+        "plot.pca_elbow_ylabel": "Ratio de Varianza",
+        "plot.pca_embed_title": "Embedding PCA",
+        "plot.umap_xlabel": "UMAP1",
+        "plot.umap_ylabel": "UMAP2",
+        "plot.umap_title_prefix": "UMAP — {color}",
+        "plot.marker_ranking_title": "Top Genes Marcadores por {groupby}",
+        "plot.marker_score_label": "Puntuación",
+        "plot.marker_no_data": "Sin datos",
+        "plot.marker_no_genes": "No se encontraron genes marcadores",
+        "plot.dotplot_xlabel": "Genes",
+        "plot.dotplot_ylabel": "Cluster",
+        "plot.dotplot_title": "Dot Plot — Genes Marcadores",
+        "plot.dotplot_cbar_label": "Expresión media",
+        "plot.dotplot_size_legend": "% expresando",
+        "plot.heatmap_no_genes": "No hay genes marcadores para mostrar",
+        "plot.heatmap_cluster_title": "Cluster",
+        "plot.heatmap_xlabel": "Células (ordenadas por cluster)",
+        "plot.heatmap_cbar_label": "Expresión",
+        "plot.heatmap_title": "Mapa de Calor de Genes Marcadores",
+
+        # ── Etiquetas de gráficos — visualización Bulk ─────────────────
+        "plot.not_significant": "No significativo",
+        "plot.up_regulated": "Sobre-expresado",
+        "plot.down_regulated": "Sub-expresado",
+        "plot.volcano_summary": (
+            "Total genes: {n_total:,}\n"
+            "Significativos: {n_sig:,} ({n_up:,} sobre · {n_down:,} sub)"
+        ),
+        "plot.volcano_shrunk_suffix": "  [contraído]",
+        "plot.highlight_other_genes": "Otros genes ({count:,})",
+        "plot.highlight_highlighted": "Resaltados ({count:,})",
+        "plot.highlight_title": "Volcano — Genes Resaltados",
+        "plot.highlight_info": "Resaltados: {n_found}",
+        "plot.highlight_not_found": "No encontrados: {n_not_found}",
+        "plot.pca_axis_variance": "PC{n} ({pct:.1f}% varianza)",
+        "plot.ma_not_significant": "No significativo",
+        "plot.ma_up_regulated": "Sobre-expresado",
+        "plot.ma_down_regulated": "Sub-expresado",
+        "plot.ma_summary": (
+            "Total: {n_total:,} genes\n"
+            "Significativos: {n_sig:,} ({n_up:,} sobre · {n_down:,} sub)"
+        ),
+        "plot.heatmap_zscore_label": "Z-score",
+        "plot.heatmap_condition_title": "Condición",
     },
 }
 

@@ -54,6 +54,7 @@ from config import (
     HEATMAP_CONFIG,
     MEMORY_CONFIG,
 )
+from i18n import t, tf
 
 
 # ── Classification categories ────────────────────────────────────────
@@ -63,6 +64,7 @@ CATEGORY_ORDER = ["NS", "Down", "Up"]
 # ── Valid matplotlib legend locations ────────────────────────────────
 LEGEND_LOCATIONS = [
     "best",
+    "none",
     "upper right",
     "upper left",
     "lower left",
@@ -274,7 +276,7 @@ def create_volcano_plot(
             "color": cfg["color_ns"],
             "alpha": cfg["alpha_ns"],
             "size": cfg["size_ns"],
-            "label": "Not significant",
+            "label": t("plot.not_significant"),
             "zorder": 1,
             "marker": "o",
         },
@@ -282,7 +284,7 @@ def create_volcano_plot(
             "color": cfg["color_down"],
             "alpha": cfg["alpha_down"],
             "size": cfg["size_down"],
-            "label": "Down-regulated",
+            "label": t("plot.down_regulated"),
             "zorder": 2,
             "marker": "v",       # downward triangle
         },
@@ -290,7 +292,7 @@ def create_volcano_plot(
             "color": cfg["color_up"],
             "alpha": cfg["alpha_up"],
             "size": cfg["size_up"],
-            "label": "Up-regulated",
+            "label": t("plot.up_regulated"),
             "zorder": 2,
             "marker": "^",       # upward triangle
         },
@@ -398,7 +400,7 @@ def create_volcano_plot(
     # ── Axis labels and title ────────────────────────────────────────
     xlabel = cfg["xlabel_template"].format(test=test_level, ref=reference_level)
     if shrinkage_applied:
-        xlabel += "  [shrunk]"
+        xlabel += t("plot.volcano_shrunk_suffix")
     ax.set_xlabel(xlabel, fontsize=cfg["font_axes"], color="#333333")
     ax.set_ylabel(cfg["ylabel"], fontsize=cfg["font_axes"], color="#333333")
 
@@ -423,10 +425,9 @@ def create_volcano_plot(
     n_down = counts_by_cat.get("Down", 0)
     n_sig_total = n_up + n_down
 
-    summary_text = (
-        f"Total genes: {n_total:,}\n"
-        f"Significant: {n_sig_total:,} "
-        f"({n_up:,} up · {n_down:,} down)"
+    summary_text = tf(
+        "plot.volcano_summary",
+        n_total=n_total, n_sig=n_sig_total, n_up=n_up, n_down=n_down,
     )
     ax.annotate(
         summary_text,
@@ -553,7 +554,7 @@ def create_volcano_highlight(
         marker="o",
         edgecolors="none",
         zorder=1,
-        label=f"Other genes ({len(df_bg):,})",
+        label=tf("plot.highlight_other_genes", count=len(df_bg)),
     )
 
     # ── Highlight: genes of interest ──────────────────────────────────
@@ -571,7 +572,7 @@ def create_volcano_highlight(
             edgecolors=hl_edge,
             linewidths=1.2,
             zorder=5,
-            label=f"Highlighted ({len(df_hl):,})",
+            label=tf("plot.highlight_highlighted", count=len(df_hl)),
         )
 
         # ── Labels for highlighted genes ──────────────────────────────
@@ -641,7 +642,7 @@ def create_volcano_highlight(
     ax.set_xlabel(xlabel, fontsize=cfg["font_axes"], color="#333333")
     ax.set_ylabel(cfg["ylabel"], fontsize=cfg["font_axes"], color="#333333")
     ax.set_title(
-        "Volcano Plot — Highlighted Genes",
+        t("plot.highlight_title"),
         fontsize=cfg["font_title"],
         fontweight="bold",
         color="#222222",
@@ -653,9 +654,9 @@ def create_volcano_highlight(
 
     # ── Info box with genes not found ─────────────────────────────────
     not_found = [g for g in highlight_genes if g not in volcano_df.index]
-    info_lines = [f"Highlighted: {len(found)}"]
+    info_lines = [tf("plot.highlight_info", n_found=len(found))]
     if not_found:
-        info_lines.append(f"Not found: {len(not_found)}")
+        info_lines.append(tf("plot.highlight_not_found", n_not_found=len(not_found)))
     info_text = "\n".join(info_lines)
 
     ax.annotate(
@@ -910,11 +911,11 @@ def create_pca_plot(
 
     # Axes
     ax.set_xlabel(
-        f"PC1 ({var_explained[0]*100:.1f}% variance)",
+        tf("plot.pca_axis_variance", n=1, pct=var_explained[0]*100),
         fontsize=cfg["font_axes"],
     )
     ax.set_ylabel(
-        f"PC2 ({var_explained[1]*100:.1f}% variance)",
+        tf("plot.pca_axis_variance", n=2, pct=var_explained[1]*100),
         fontsize=cfg["font_axes"],
     )
     transform_label = pca_df.attrs.get("transform", "")
@@ -1026,11 +1027,11 @@ def create_ma_plot(
     # Styles per category (same as volcano)
     cat_style = {
         "NS": {"color": cfg["color_ns"], "alpha": cfg["alpha_ns"],
-               "size": cfg["size_ns"], "marker": "o", "label": "Not significant"},
+               "size": cfg["size_ns"], "marker": "o", "label": t("plot.ma_not_significant")},
         "Down": {"color": cfg["color_down"], "alpha": cfg["alpha_down"],
-                 "size": cfg["size_down"], "marker": "v", "label": "Down-regulated"},
+                 "size": cfg["size_down"], "marker": "v", "label": t("plot.ma_down_regulated")},
         "Up": {"color": cfg["color_up"], "alpha": cfg["alpha_up"],
-               "size": cfg["size_up"], "marker": "^", "label": "Up-regulated"},
+               "size": cfg["size_up"], "marker": "^", "label": t("plot.ma_up_regulated")},
     }
 
     counts_by_cat = {}
@@ -1077,7 +1078,7 @@ def create_ma_plot(
     n_total = len(ma_df)
     n_up = counts_by_cat.get("Up", 0)
     n_down = counts_by_cat.get("Down", 0)
-    summary_text = f"Total: {n_total:,} genes\nSignificant: {n_up + n_down:,} ({n_up:,} up · {n_down:,} down)"
+    summary_text = tf("plot.ma_summary", n_total=n_total, n_sig=n_up + n_down, n_up=n_up, n_down=n_down)
     ax.annotate(
         summary_text,
         xy=(0.02, 0.97),
@@ -1283,7 +1284,7 @@ def create_heatmap(
     )
 
     # ── Colorbar ─────────────────────────────────────────────────────
-    g.cax.set_ylabel("Z-score", fontsize=10, rotation=90, labelpad=8)
+    g.cax.set_ylabel(t("plot.heatmap_zscore_label"), fontsize=10, rotation=90, labelpad=8)
     g.cax.yaxis.set_label_position("left")
     g.cax.tick_params(labelsize=8)
 
@@ -1294,7 +1295,7 @@ def create_heatmap(
                          for l, c in lut.items()]
         g.ax_heatmap.legend(
             handles=legend_handles,
-            title="Condition",
+            title=t("plot.heatmap_condition_title"),
             loc="upper left",
             bbox_to_anchor=(1.12, 1.0),
             fontsize=9,

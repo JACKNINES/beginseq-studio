@@ -13,6 +13,12 @@ import streamlit as st
 from i18n import t
 from config import AUTO_SHUTDOWN_CONFIG
 from auto_shutdown import start_shutdown_watcher
+from runtime_utils import apply_local_upload_limit
+
+# ─────────────────────────────────────────────────────────────────────
+# Local-only: raise upload limit to 5 GB for scRNA-seq datasets
+# ─────────────────────────────────────────────────────────────────────
+apply_local_upload_limit()
 
 # ─────────────────────────────────────────────────────────────────────
 # Auto-shutdown: stop the server when all browser tabs are closed
@@ -94,12 +100,10 @@ with col1:
 with col2:
     st.markdown(f"### 🔬 {t('landing.scrna_title')}")
     st.markdown(t("landing.scrna_desc"))
-    st.markdown(f"*🚧 {t('landing.coming_soon')}*")
     st.page_link(
         "pages/2_🔬_scRNA-seq.py",
         label=f"→ {t('landing.open_tool')}",
         icon="🔬",
-        disabled=True,
     )
 
 with col3:

@@ -11,12 +11,17 @@ We gratefully acknowledge the authors and contributors of these projects.
 ===============================================================================
 
 
+── Core Framework ─────────────────────────────────────────────────────────────
+
 1. Streamlit
    License:    Apache License 2.0
    Copyright:  Snowflake Inc.
    Website:    https://streamlit.io/
    License:    https://github.com/streamlit/streamlit/blob/develop/LICENSE
    Usage:      Web application framework and user interface.
+
+
+── Bulk RNA-seq Analysis ──────────────────────────────────────────────────────
 
 2. PyDESeq2
    License:    MIT License
@@ -26,75 +31,132 @@ We gratefully acknowledge the authors and contributors of these projects.
    Usage:      Python implementation of the DESeq2 algorithm for RNA-seq
                differential expression analysis.
 
-3. Pandas
+
+── scRNA-seq Analysis ─────────────────────────────────────────────────────────
+
+3. Scanpy
+   License:    BSD 3-Clause License
+   Copyright:  Theis Lab, Helmholtz Center Munich
+   Website:    https://scanpy.readthedocs.io/
+   License:    https://github.com/scverse/scanpy/blob/main/LICENSE
+   Usage:      Single-cell RNA-seq analysis pipeline (QC, normalization,
+               PCA, UMAP, clustering, marker genes).
+
+4. AnnData
+   License:    BSD 3-Clause License
+   Copyright:  scverse team
+   Website:    https://anndata.readthedocs.io/
+   License:    https://github.com/scverse/anndata/blob/main/LICENSE
+   Usage:      Annotated data container for single-cell datasets (.h5ad).
+
+5. leidenalg
+   License:    GNU General Public License v3.0
+   Copyright:  Vincent A. Traag
+   Website:    https://github.com/vtraag/leidenalg
+   License:    https://github.com/vtraag/leidenalg/blob/main/LICENSE
+   Usage:      Leiden community detection algorithm for cell clustering.
+
+6. UMAP (umap-learn)
+   License:    BSD 3-Clause License
+   Copyright:  Leland McInnes
+   Website:    https://umap-learn.readthedocs.io/
+   License:    https://github.com/lmcinnes/umap/blob/master/LICENSE
+   Usage:      Uniform Manifold Approximation and Projection for
+               dimensionality reduction and visualization.
+
+7. rpy2
+   License:    GNU General Public License v2.0 (or later)
+   Copyright:  Laurent Gautier & contributors
+   Website:    https://rpy2.github.io/
+   License:    https://github.com/rpy2/rpy2/blob/master/LICENSE
+   Usage:      Python-to-R bridge for calling SoupX ambient RNA removal.
+
+8. SoupX (R package)
+   License:    GNU General Public License v2.0
+   Copyright:  Matthew D. Young
+   Website:    https://github.com/constantAmateur/SoupX
+   License:    https://github.com/constantAmateur/SoupX/blob/master/LICENSE
+   Usage:      Ambient RNA contamination removal from droplet-based
+               single-cell RNA-seq data.
+
+
+── Data Manipulation ──────────────────────────────────────────────────────────
+
+9. Pandas
    License:    BSD 3-Clause License
    Copyright:  pandas Development Team
    Website:    https://pandas.pydata.org/
    License:    https://github.com/pandas-dev/pandas/blob/main/LICENSE
    Usage:      Tabular data manipulation and I/O.
 
-4. NumPy
-   License:    BSD 3-Clause License
-   Copyright:  NumPy Developers
-   Website:    https://numpy.org/
-   License:    https://github.com/numpy/numpy/blob/main/LICENSE.txt
-   Usage:      Numerical operations and array computation.
+10. NumPy
+    License:    BSD 3-Clause License
+    Copyright:  NumPy Developers
+    Website:    https://numpy.org/
+    License:    https://github.com/numpy/numpy/blob/main/LICENSE.txt
+    Usage:      Numerical operations and array computation.
 
-5. Matplotlib
-   License:    Matplotlib License (BSD-compatible)
-   Copyright:  Matplotlib Development Team
-   Website:    https://matplotlib.org/
-   License:    https://github.com/matplotlib/matplotlib/blob/main/LICENSE/LICENSE
-   Usage:      Static plot generation (volcano, MA, heatmap).
 
-6. Seaborn
-   License:    BSD 3-Clause License
-   Copyright:  Michael Waskom
-   Website:    https://seaborn.pydata.org/
-   License:    https://github.com/mwaskom/seaborn/blob/master/LICENSE.md
-   Usage:      Statistical data visualization (heatmaps, clustermaps).
+── Visualization ──────────────────────────────────────────────────────────────
 
-7. scikit-learn
-   License:    BSD 3-Clause License
-   Copyright:  scikit-learn Developers
-   Website:    https://scikit-learn.org/
-   License:    https://github.com/scikit-learn/scikit-learn/blob/main/COPYING
-   Usage:      PCA and clustering for sample visualizations.
+11. Matplotlib
+    License:    Matplotlib License (BSD-compatible)
+    Copyright:  Matplotlib Development Team
+    Website:    https://matplotlib.org/
+    License:    https://github.com/matplotlib/matplotlib/blob/main/LICENSE/LICENSE
+    Usage:      Static plot generation (volcano, MA, heatmap, UMAP).
 
-8. SciPy
-   License:    BSD 3-Clause License
-   Copyright:  SciPy Developers
-   Website:    https://scipy.org/
-   License:    https://github.com/scipy/scipy/blob/main/LICENSE.txt
-   Usage:      Scientific computing and hierarchical clustering.
+12. Seaborn
+    License:    BSD 3-Clause License
+    Copyright:  Michael Waskom
+    Website:    https://seaborn.pydata.org/
+    License:    https://github.com/mwaskom/seaborn/blob/master/LICENSE.md
+    Usage:      Statistical data visualization (heatmaps, clustermaps).
 
-9. adjustText
-   License:    MIT License
-   Copyright:  Ilya Flyamer
-   Website:    https://github.com/Phlya/adjustText
-   License:    https://github.com/Phlya/adjustText/blob/master/LICENSE
-   Usage:      Automatic label adjustment in scatter plots to avoid overlaps.
+13. adjustText
+    License:    MIT License
+    Copyright:  Ilya Flyamer
+    Website:    https://github.com/Phlya/adjustText
+    License:    https://github.com/Phlya/adjustText/blob/master/LICENSE
+    Usage:      Automatic label adjustment in scatter plots to avoid overlaps.
 
-10. pyCombat (combat)
+
+── Scientific Computing ───────────────────────────────────────────────────────
+
+14. scikit-learn
+    License:    BSD 3-Clause License
+    Copyright:  scikit-learn Developers
+    Website:    https://scikit-learn.org/
+    License:    https://github.com/scikit-learn/scikit-learn/blob/main/COPYING
+    Usage:      PCA and clustering for sample visualizations.
+
+15. SciPy
+    License:    BSD 3-Clause License
+    Copyright:  SciPy Developers
+    Website:    https://scipy.org/
+    License:    https://github.com/scipy/scipy/blob/main/LICENSE.txt
+    Usage:      Scientific computing, hierarchical clustering, and sparse
+                matrix operations.
+
+
+── Batch Correction ───────────────────────────────────────────────────────────
+
+16. pyCombat (combat)
     License:    MIT License
     Copyright:  Abdelkader Behdenna
     Website:    https://github.com/epigenelabs/pyComBat
     License:    https://github.com/epigenelabs/pyComBat/blob/master/LICENSE
     Usage:      Batch effect correction (ComBat) for PCA visualizations.
 
-11. Requests
+
+── Networking ─────────────────────────────────────────────────────────────────
+
+17. Requests
     License:    Apache License 2.0
     Copyright:  Kenneth Reitz & contributors
     Website:    https://docs.python-requests.org/
     License:    https://github.com/psf/requests/blob/main/LICENSE
     Usage:      HTTP client for GDC REST API communication.
-
-12. Scanpy  (upcoming — scRNA-seq module)
-    License:    BSD 3-Clause License
-    Copyright:  Theis Lab, Helmholtz Center Munich
-    Website:    https://scanpy.readthedocs.io/
-    License:    https://github.com/scverse/scanpy/blob/main/LICENSE
-    Usage:      Single-cell RNA-seq analysis pipeline (planned).
 
 
 ===============================================================================
@@ -107,11 +169,18 @@ Apache License 2.0  (Streamlit, Requests)
 MIT License  (PyDESeq2, adjustText, pyCombat)
     https://opensource.org/licenses/MIT
 
-BSD 3-Clause License  (Pandas, NumPy, scikit-learn, SciPy, Seaborn, Scanpy)
+BSD 3-Clause License  (Pandas, NumPy, scikit-learn, SciPy, Seaborn, Scanpy,
+                        AnnData, UMAP)
     https://opensource.org/licenses/BSD-3-Clause
 
 Matplotlib License  (BSD-compatible)
     https://matplotlib.org/stable/users/project/license.html
+
+GNU General Public License v2.0  (rpy2, SoupX)
+    https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+
+GNU General Public License v3.0  (leidenalg)
+    https://www.gnu.org/licenses/gpl-3.0.html
 
 
 ===============================================================================

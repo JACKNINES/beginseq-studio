@@ -33,3 +33,29 @@ combat>=0.3.3
 
 # HTTP requests for the GDC REST API (Dataset Creator)
 requests>=2.28.0
+
+# ── scRNA-seq Analysis ─────────────────────────────────────────
+# Core single-cell analysis framework
+scanpy>=1.9.0
+
+# Annotated data container for single-cell data
+anndata>=0.9.0
+
+# Leiden community detection for clustering
+leidenalg>=0.9.0
+igraph>=0.10.0
+
+# UMAP dimensionality reduction
+umap-learn>=0.5.0
+
+# Required by scanpy for HVG selection with seurat_v3 flavor
+scikit-misc>=0.2.0
+
+# Harmony batch effect correction for scRNA-seq integration
+# v0.2+ uses PyTorch (GPU-accelerated); runs in an isolated subprocess
+# to contain the RAM spike from the torch runtime.
+harmonypy>=0.2.0
+
+# ── Ambient RNA Removal (SoupX via R) ────────────────────────
+# Python-to-R bridge for calling SoupX
+rpy2>=3.5.0
