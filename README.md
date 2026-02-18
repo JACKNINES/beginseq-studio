@@ -343,7 +343,7 @@ The Dataset Creator module retrieves open-access data from the [NCI Genomic Data
 If you use BeginSeq Studio in your research, please cite:
 
 ```
-Ridout-Buhl, E. (2025). BeginSeq Studio: Interactive RNA-seq differential expression analysis tool.
+Ridout-Buhl, E. (2026). BeginSeq Studio: Interactive RNA-seq differential expression analysis tool.
 https://github.com/JACKNINES/beginseq-studio
 ```
 
