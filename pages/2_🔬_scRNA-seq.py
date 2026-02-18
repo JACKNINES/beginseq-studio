@@ -62,30 +62,22 @@ with st.sidebar:
         st.rerun()
 
 # ─────────────────────────────────────────────────────────────────────
-# Localhost gate: block remote access (cloud deployments)
+# Localhost gate + dependency check
 # ─────────────────────────────────────────────────────────────────────
 apply_local_upload_limit()
 
-if not is_running_locally():
-    st.title(f"🔬 {t('scrna.title')}")
-    st.markdown("---")
-    st.warning(t("scrna.remote_blocked"))
-    st.stop()
-
-# ─────────────────────────────────────────────────────────────────────
-# Dependency check: scRNA-seq packages may not be installed on cloud
-# ─────────────────────────────────────────────────────────────────────
+# Check dependencies FIRST — on cloud, scanpy is not installed, so this
+# catches the cloud case even if is_running_locally() has a false positive.
+_scrna_deps_available = True
 try:
     import scanpy  # noqa: F401 — quick availability check
 except ImportError:
+    _scrna_deps_available = False
+
+if not is_running_locally() or not _scrna_deps_available:
     st.title(f"🔬 {t('scrna.title')}")
     st.markdown("---")
-    st.error(
-        "**scRNA-seq dependencies are not installed.**\n\n"
-        "This module requires additional packages. Install them with:\n\n"
-        "```\npip install -r requirements-scrna.txt\n```\n\n"
-        "See the [README](https://github.com/JACKNINES/beginseq-studio#optional-dependencies) for details."
-    )
+    st.warning(t("scrna.remote_blocked"))
     st.stop()
 
 # ─────────────────────────────────────────────────────────────────────
