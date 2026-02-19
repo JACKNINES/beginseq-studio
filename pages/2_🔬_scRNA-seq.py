@@ -842,18 +842,22 @@ st.markdown("---")
 # ─────────────────────────────────────────────────────────────────────
 # Visualization Tabs
 # ─────────────────────────────────────────────────────────────────────
-from scrna_visualization import (
-    plot_qc_violin,
-    plot_qc_scatter,
-    plot_hvg,
-    plot_pca_variance,
-    plot_pca_embedding,
-    plot_umap,
-    plot_marker_genes_ranking,
-    plot_dotplot,
-    plot_marker_heatmap,
-    _fig_to_bytes,
-)
+try:
+    from scrna_visualization import (
+        plot_qc_violin,
+        plot_qc_scatter,
+        plot_hvg,
+        plot_pca_variance,
+        plot_pca_embedding,
+        plot_umap,
+        plot_marker_genes_ranking,
+        plot_dotplot,
+        plot_marker_heatmap,
+        _fig_to_bytes,
+    )
+except ImportError:
+    st.error("Visualization dependencies are not available.")
+    st.stop()
 
 tab_qc, tab_hvg, tab_pca, tab_umap, tab_markers = st.tabs([
     t("scrna.tab_qc"),

@@ -21,8 +21,6 @@ st.set_page_config(
 )
 
 from i18n import t
-from config import AUTO_SHUTDOWN_CONFIG
-from auto_shutdown import start_shutdown_watcher
 from runtime_utils import apply_local_upload_limit, is_running_locally
 
 # ─────────────────────────────────────────────────────────────────────
@@ -34,11 +32,17 @@ apply_local_upload_limit()
 # Auto-shutdown: stop the server when all browser tabs are closed
 # Only on localhost — on cloud, Streamlit manages the app lifecycle.
 # ─────────────────────────────────────────────────────────────────────
-if AUTO_SHUTDOWN_CONFIG["enabled"] and is_running_locally():
-    start_shutdown_watcher(
-        grace_period=AUTO_SHUTDOWN_CONFIG["grace_period_seconds"],
-        poll_interval=AUTO_SHUTDOWN_CONFIG["poll_interval_seconds"],
-    )
+if is_running_locally():
+    try:
+        from config import AUTO_SHUTDOWN_CONFIG
+        from auto_shutdown import start_shutdown_watcher
+        if AUTO_SHUTDOWN_CONFIG["enabled"]:
+            start_shutdown_watcher(
+                grace_period=AUTO_SHUTDOWN_CONFIG["grace_period_seconds"],
+                poll_interval=AUTO_SHUTDOWN_CONFIG["poll_interval_seconds"],
+            )
+    except Exception:
+        pass  # Non-critical — fail silently on cloud
 
 # ─────────────────────────────────────────────────────────────────────
 # Sidebar: language selector (persists across all pages)
@@ -66,21 +70,24 @@ with st.sidebar:
 import base64, pathlib
 
 _helix_path = pathlib.Path(__file__).resolve().parent / "assets" / "helix.MP4"
-if _helix_path.exists():
-    _helix_b64 = base64.b64encode(_helix_path.read_bytes()).decode()
-    st.markdown(
-        f"""
-        <div style="display:flex; align-items:center; gap:12px; margin-bottom:0.25em;">
-            <video autoplay loop muted playsinline
-                   style="height:60px; width:auto; border-radius:6px;">
-                <source src="data:video/mp4;base64,{_helix_b64}" type="video/mp4">
-            </video>
-            <h1 style="margin:0; padding:0; font-size:2em;">{t('landing.title')}</h1>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-else:
+try:
+    if _helix_path.exists():
+        _helix_b64 = base64.b64encode(_helix_path.read_bytes()).decode()
+        st.markdown(
+            f"""
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:0.25em;">
+                <video autoplay loop muted playsinline
+                       style="height:60px; width:auto; border-radius:6px;">
+                    <source src="data:video/mp4;base64,{_helix_b64}" type="video/mp4">
+                </video>
+                <h1 style="margin:0; padding:0; font-size:2em;">{t('landing.title')}</h1>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        st.title(f"🧬 {t('landing.title')}")
+except Exception:
     st.title(f"🧬 {t('landing.title')}")
 st.markdown(t("landing.subtitle"))
 st.markdown("---")
