@@ -618,6 +618,8 @@ def check_soupx_available() -> dict:
     -------
     dict  {"r": bool, "rpy2": bool, "soupx": bool, "error": str|None}
     """
+    import warnings
+
     result = {"r": False, "rpy2": False, "soupx": False, "error": None}
 
     # 1. Check rpy2 import
@@ -629,8 +631,14 @@ def check_soupx_available() -> dict:
         return result
 
     # 2. Check R is reachable
+    # Suppress rpy2 warnings about R not being initialized from the main
+    # thread and the reticulate segfault notice — they are harmless and
+    # would pollute the terminal on every Streamlit rerun.
     try:
-        import rpy2.robjects  # noqa: F401
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="R is not initialized")
+            warnings.filterwarnings("ignore", message=".*reticulate.*")
+            import rpy2.robjects  # noqa: F401
         result["r"] = True
     except Exception as exc:
         result["error"] = f"R not found or rpy2 cannot connect to R: {exc}"
