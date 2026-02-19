@@ -13,7 +13,7 @@ import streamlit as st
 from i18n import t
 from config import AUTO_SHUTDOWN_CONFIG
 from auto_shutdown import start_shutdown_watcher
-from runtime_utils import apply_local_upload_limit
+from runtime_utils import apply_local_upload_limit, is_running_locally
 
 # ─────────────────────────────────────────────────────────────────────
 # Local-only: raise upload limit to 5 GB for scRNA-seq datasets
@@ -22,8 +22,9 @@ apply_local_upload_limit()
 
 # ─────────────────────────────────────────────────────────────────────
 # Auto-shutdown: stop the server when all browser tabs are closed
+# Only on localhost — on cloud, Streamlit manages the app lifecycle.
 # ─────────────────────────────────────────────────────────────────────
-if AUTO_SHUTDOWN_CONFIG["enabled"]:
+if AUTO_SHUTDOWN_CONFIG["enabled"] and is_running_locally():
     start_shutdown_watcher(
         grace_period=AUTO_SHUTDOWN_CONFIG["grace_period_seconds"],
         poll_interval=AUTO_SHUTDOWN_CONFIG["poll_interval_seconds"],
