@@ -14,14 +14,19 @@ _LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1", ""}
 _CLOUD_ENV_MARKERS = (
     "STREAMLIT_SHARING_MODE",   # legacy Streamlit sharing
     "IS_STREAMLIT_CLOUD",       # newer Streamlit Cloud
-    "HOME",                     # /home/adminuser on Streamlit Cloud
+    "HOME",                     # /home/adminuser or /home/appuser on Streamlit Cloud
 )
 
 
 def _is_streamlit_cloud() -> bool:
     """Detect Streamlit Cloud by environment markers."""
-    # Streamlit Cloud always runs as 'adminuser' in /home/adminuser
-    if os.environ.get("HOME", "") == "/home/adminuser":
+    # Streamlit Cloud runs under /home/adminuser OR /home/appuser
+    # (the username changed in recent Cloud platform updates).
+    home = os.environ.get("HOME", "")
+    if home in ("/home/adminuser", "/home/appuser"):
+        return True
+    # Code is mounted under /mount/src/ on Streamlit Cloud
+    if os.getcwd().startswith("/mount/src"):
         return True
     # Explicit cloud flags
     if os.environ.get("STREAMLIT_SHARING_MODE"):
