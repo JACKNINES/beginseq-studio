@@ -9,7 +9,19 @@ To run:
     streamlit run app.py
 """
 
+import sys
+import os
+
+# ─────────────────────────────────────────────────────────────────────
+# Diagnostic: print to stderr so Streamlit Cloud logs capture it
+# ─────────────────────────────────────────────────────────────────────
+print(f"[BeginSeq] Python {sys.version}", file=sys.stderr)
+print(f"[BeginSeq] HOME={os.environ.get('HOME', '?')}", file=sys.stderr)
+print(f"[BeginSeq] CWD={os.getcwd()}", file=sys.stderr)
+
 import streamlit as st
+
+print(f"[BeginSeq] Streamlit {st.__version__} imported OK", file=sys.stderr)
 
 # ─────────────────────────────────────────────────────────────────────
 # Page configuration — MUST be the first Streamlit command
@@ -20,9 +32,13 @@ st.set_page_config(
     page_icon="🧬",
 )
 
+print("[BeginSeq] set_page_config OK", file=sys.stderr)
+
 try:
     from i18n import t
     from runtime_utils import apply_local_upload_limit, is_running_locally
+
+    print(f"[BeginSeq] is_running_locally()={is_running_locally()}", file=sys.stderr)
 
     # ─────────────────────────────────────────────────────────────────
     # Local-only: raise upload limit to 5 GB for scRNA-seq datasets
@@ -131,11 +147,15 @@ try:
     st.markdown("---")
     st.caption(t("landing.disclaimer"))
 
+    print("[BeginSeq] app.py rendered OK", file=sys.stderr)
+
 except Exception as _exc:
     # ─────────────────────────────────────────────────────────────────
     # Diagnostic: show the real traceback on Streamlit Cloud so we can
     # debug "Error running app" without a traceback in the logs.
     # ─────────────────────────────────────────────────────────────────
     import traceback
+    _tb = traceback.format_exc()
+    print(f"[BeginSeq] CRASH: {_tb}", file=sys.stderr)
     st.error("BeginSeq Studio failed to start. Details below:")
-    st.code(traceback.format_exc(), language="python")
+    st.code(_tb, language="python")
