@@ -1,5 +1,6 @@
 services:
   beginseq:
+    image: jacknines/beginseq-studio:latest
     build: .
     platform: linux/amd64
     container_name: beginseq-studio

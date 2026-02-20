@@ -225,6 +225,52 @@ If R or SoupX is not available, the rest of BeginSeq Studio works normally — o
 
 ---
 
+## Docker
+
+The fastest way to run BeginSeq Studio with **all** features enabled (including scRNA-seq, R, and SoupX) — no Python, R, or dependency setup required.
+
+### Quick start (pre-built image)
+
+```bash
+docker pull jacknines/beginseq-studio
+docker run -p 8501:8501 jacknines/beginseq-studio
+```
+
+Open **http://localhost:8501** in your browser.
+
+### Using docker-compose
+
+```bash
+git clone https://github.com/JACKNINES/beginseq-studio.git
+cd beginseq-studio
+docker compose up
+```
+
+This uses the pre-built image from Docker Hub, maps port 8501, and mounts a `./data` volume for persistent data.
+
+### Building locally
+
+If you prefer to build the image yourself:
+
+```bash
+docker compose up --build
+```
+
+> **Note:** The first build takes ~30-60 minutes (R + SoupX compilation). Subsequent builds are fast thanks to Docker layer caching.
+
+### Resource recommendations
+
+| Use case | Recommended RAM |
+|----------|----------------|
+| Bulk RNA-seq only | 2 GB |
+| scRNA-seq (< 10k cells) | 4 GB |
+| scRNA-seq (30k cells) | 8 GB |
+| scRNA-seq (50k+ cells) | 12+ GB |
+
+Adjust the memory limit in `docker-compose.yml` under `deploy.resources.limits.memory`.
+
+---
+
 ## Project Structure
 
 ```
@@ -250,6 +296,9 @@ BeginSeq Studio/
 │   └── Box.MP4                 # Box animation (Dataset Creator page)
 ├── requirements.txt            # Core dependencies (Bulk + Dataset Creator)
 ├── requirements-scrna.txt      # scRNA-seq dependencies (local-only)
+├── Dockerfile                  # Docker image definition
+├── docker-compose.yml          # Docker Compose orchestration
+├── .dockerignore               # Files excluded from Docker build
 ├── .streamlit/
 │   └── config.toml             # Streamlit server settings (upload limits)
 ├── pages/
