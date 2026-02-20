@@ -1,0 +1,18 @@
+services:
+  beginseq:
+    build: .
+    platform: linux/amd64
+    container_name: beginseq-studio
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - BEGINSEQ_DOCKER=1
+    deploy:
+      resources:
+        limits:
+          memory: 8g
+        reservations:
+          memory: 2g
+    restart: unless-stopped

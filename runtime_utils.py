@@ -8,6 +8,12 @@ Provides helpers used across multiple pages:
 
 import os
 
+
+def is_running_in_docker() -> bool:
+    """Return True when running inside a Docker container."""
+    return os.environ.get("BEGINSEQ_DOCKER", "").strip() == "1"
+
+
 _LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1", ""}
 
 # Streamlit Cloud sets these environment variables on their managed instances.

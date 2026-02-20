@@ -21,7 +21,7 @@ st.set_page_config(
 )
 
 from i18n import t
-from runtime_utils import apply_local_upload_limit, is_running_locally
+from runtime_utils import apply_local_upload_limit, is_running_locally, is_running_in_docker
 
 # ─────────────────────────────────────────────────────────────────────
 # Local-only: raise upload limit to 5 GB for scRNA-seq datasets
@@ -32,7 +32,7 @@ apply_local_upload_limit()
 # Auto-shutdown: stop the server when all browser tabs are closed
 # Only on localhost — on cloud, Streamlit manages the app lifecycle.
 # ─────────────────────────────────────────────────────────────────────
-if is_running_locally():
+if is_running_locally() and not is_running_in_docker():
     try:
         from config import AUTO_SHUTDOWN_CONFIG
         from auto_shutdown import start_shutdown_watcher
