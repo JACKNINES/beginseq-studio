@@ -164,10 +164,33 @@ Build analysis-ready datasets directly from the **NCI Genomic Data Commons (GDC)
 
 ### Additional features
 
+- **Three visual themes:** Dark, Light, and Cyberpunk — selectable from the sidebar. The theme applies to all plots AND the entire Streamlit UI (sidebar, widgets, buttons, tables, etc.)
+- **Scientific audit log:** Both analysis modules generate a detailed audit log capturing parameters, library versions, data dimensions, step timings, and results summaries. Downloadable in JSON (machine-readable) and TXT (human-readable for lab notebooks) formats
 - Bilingual interface (English / Spanish)
-- Configurable significance thresholds and plot aesthetics via `config.py`
+- Configurable significance thresholds and plot aesthetics via `engine/config.py`
 - Input validation with clear, actionable error messages
 - Local file-upload limit of **5 GB** (automatically configured when running on localhost)
+
+### Architecture: `engine/` — Standalone analysis package
+
+All analysis logic lives in the `engine/` package, which has **zero Streamlit dependency**. This means:
+
+- **Headless use:** Import `engine` in Jupyter notebooks, scripts, or CI pipelines without installing Streamlit
+- **Testing:** Unit-test analysis functions in isolation
+- **Extensibility:** Build alternative frontends (CLI, Flask, FastAPI) on top of the same engine
+- **Reproducibility:** The `engine.audit` module captures everything needed to reproduce an analysis
+
+```python
+# Example: run a DESeq2 pipeline from a Jupyter notebook
+from engine import run_deseq2_pipeline
+from engine.data_io import read_counts_file, read_metadata_file
+
+counts_df = read_counts_file(open("counts.csv", "rb"))
+metadata_df = read_metadata_file(open("metadata.csv", "rb"))
+results = run_deseq2_pipeline(counts_df, metadata_df, ...)
+```
+
+The root-level module files (`analysis.py`, `config.py`, etc.) are thin 2-line shims that re-export from `engine/` for backward compatibility.
 
 ---
 
@@ -269,6 +292,22 @@ docker compose up --build
 
 Adjust the memory limit in `docker-compose.yml` under `deploy.resources.limits.memory`.
 
+### Updating the Docker image
+
+When a new release is available on GitHub:
+
+```bash
+# If using the pre-built image:
+docker pull jacknines/beginseq-studio:latest
+docker compose up
+
+# If building locally:
+git pull origin main
+docker compose up --build
+```
+
+> **Note:** After the `engine/` refactor, the Docker image must be rebuilt to include the new package structure. Existing images from before this refactor will not work with the current codebase.
+
 ---
 
 ## Project Structure
@@ -276,19 +315,39 @@ Adjust the memory limit in `docker-compose.yml` under `deploy.resources.limits.m
 ```
 BeginSeq Studio/
 ├── app.py                      # Main Streamlit entry point
-├── config.py                   # Central configuration (thresholds, plot styles)
-├── i18n.py                     # Internationalisation (EN / ES translations)
+├── i18n.py                     # Streamlit adapter for engine.i18n_labels
+├── theme_css.py                # Dynamic CSS injection (matches active theme)
 ├── runtime_utils.py            # Localhost detection & upload-limit helpers
-├── analysis.py                 # DESeq2 pipeline orchestrator (facade)
-├── deseq_runner.py             # PyDESeq2 wrapper
-├── validation.py               # Input data validation & normalization
-├── data_io.py                  # File reading/writing (CSV, TSV, ZIP)
-├── visualization.py            # Bulk RNA-seq plot generation
-├── classification.py           # Expression-based sample classification
-├── gdc_client.py               # GDC REST API client (Dataset Creator)
-├── scrna_pipeline.py           # scRNA-seq backend (scanpy, SoupX, 10x integrator)
-├── scrna_visualization.py      # scRNA-seq plot generation
 ├── auto_shutdown.py            # Auto-shutdown on browser disconnect
+│
+├── engine/                     # Pure analysis engine (NO Streamlit dependency)
+│   ├── __init__.py             # Public API re-exports
+│   ├── config.py               # Central configuration + theme system (Dark/Light/Cyberpunk)
+│   ├── i18n_labels.py          # All EN/ES translations (pure dict, no Streamlit)
+│   ├── protocols.py            # FileData, ProgressCallback, EstimateCallback protocols
+│   ├── analysis.py             # DESeq2 pipeline orchestrator (facade)
+│   ├── pipeline.py             # Class-based DESeq2 pipeline (fluent API, picklable)
+│   ├── deseq_runner.py         # PyDESeq2 wrapper
+│   ├── validation.py           # Input data validation & normalization
+│   ├── data_io.py              # File reading/writing (CSV, TSV, ZIP) — uses BinaryIO
+│   ├── visualization.py        # Bulk RNA-seq plot generation
+│   ├── classification.py       # Expression-based sample classification
+│   ├── gdc_client.py           # GDC REST API client (Dataset Creator)
+│   ├── scrna_pipeline.py       # scRNA-seq backend (scanpy, SoupX, 10x integrator)
+│   ├── scrna_visualization.py  # scRNA-seq plot generation
+│   └── audit.py                # Scientific audit log for reproducibility
+│
+├── analysis.py                 # Backward-compatible shim → engine.analysis
+├── config.py                   # Backward-compatible shim → engine.config
+├── validation.py               # Backward-compatible shim → engine.validation
+├── data_io.py                  # Backward-compatible shim → engine.data_io
+├── deseq_runner.py             # Backward-compatible shim → engine.deseq_runner
+├── visualization.py            # Backward-compatible shim → engine.visualization
+├── classification.py           # Backward-compatible shim → engine.classification
+├── gdc_client.py               # Backward-compatible shim → engine.gdc_client
+├── scrna_pipeline.py           # Backward-compatible shim → engine.scrna_pipeline
+├── scrna_visualization.py      # Backward-compatible shim → engine.scrna_visualization
+│
 ├── assets/
 │   ├── beginseq_logo.png       # Project logo
 │   ├── helix.MP4               # DNA helix animation (landing page)

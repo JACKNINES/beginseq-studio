@@ -13,12 +13,13 @@ from pathlib import Path
 # Ensure project root is in path for imports
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import json
 import time
 
-from config import STREAMLIT_CONFIG, FILE_CONFIG, DESEQ2_DEFAULTS, GENE_FILTER_DEFAULTS, UPLOAD_LIMITS_LOCAL
+from engine.config import STREAMLIT_CONFIG, FILE_CONFIG, DESEQ2_DEFAULTS, GENE_FILTER_DEFAULTS, UPLOAD_LIMITS_LOCAL, set_theme, THEME_PRESETS
 from runtime_utils import is_running_locally, apply_local_upload_limit
-from data_io import read_counts_file, read_metadata_file, results_to_csv
-from validation import (
+from engine.data_io import read_counts_file, read_metadata_file, results_to_csv
+from engine.validation import (
     normalize_indices,
     validate_metadata_df,
     check_sample_overlap,
@@ -26,15 +27,22 @@ from validation import (
     check_counts_are_raw,
     check_class_imbalance,
     check_sparse_data,
+    check_duplicate_samples,
+    check_condition_nan,
 )
-from classification import (
+from engine.classification import (
     compute_log2_cpm,
     classify_samples,
     merge_classification,
     build_compound_condition,
 )
-from analysis import run_deseq2_pipeline, estimate_pipeline_time, estimate_pipeline_time_with_filter
-from visualization import prepare_volcano_data, create_volcano_plot, create_volcano_highlight, LEGEND_LOCATIONS
+from engine.analysis import run_deseq2_pipeline, estimate_pipeline_time, estimate_pipeline_time_with_filter
+import engine.visualization as _engine_viz
+from engine.visualization import (
+    prepare_volcano_data, create_volcano_plot, create_volcano_highlight,
+    create_pca_plot, create_ma_plot, create_heatmap,
+    LEGEND_LOCATIONS,
+)
 from i18n import t, tf
 
 import io
@@ -69,8 +77,13 @@ def _cached_prepare_volcano(results_df, alpha, log2fc_threshold, min_base_mean):
 @st.cache_data(show_spinner=False)
 def _cached_create_volcano(volcano_df, alpha, log2fc_threshold,
                            test_level, reference_level, label_genes,
-                           title, shrinkage_applied, legend_loc):
-    """Render volcano plot (cached by parameters)."""
+                           title, shrinkage_applied, legend_loc,
+                           theme_name="dark"):
+    """Render volcano plot (cached by parameters + theme).
+
+    NOTE: ``theme_name`` MUST NOT start with underscore — Streamlit
+    excludes ``_``-prefixed params from the cache hash.
+    """
     return create_volcano_plot(
         volcano_df, alpha, log2fc_threshold, test_level, reference_level,
         label_genes=label_genes, title=title,
@@ -82,12 +95,32 @@ def _cached_create_volcano(volcano_df, alpha, log2fc_threshold,
 def _cached_create_volcano_highlight(volcano_df, highlight_genes,
                                      alpha, log2fc_threshold,
                                      test_level, reference_level,
-                                     legend_loc):
-    """Render volcano highlight plot (cached by parameters)."""
+                                     legend_loc, theme_name="dark"):
+    """Render volcano highlight plot (cached by parameters + theme)."""
     return create_volcano_highlight(
         volcano_df, highlight_genes, alpha, log2fc_threshold,
         test_level, reference_level, legend_loc=legend_loc,
     )
+
+
+@st.cache_data(show_spinner=False)
+def _cached_create_pca(pca_df, condition_col, legend_loc, theme_name="dark"):
+    """Render PCA plot (cached by data + theme)."""
+    return create_pca_plot(pca_df, condition_col, legend_loc=legend_loc)
+
+
+@st.cache_data(show_spinner=False)
+def _cached_create_ma(ma_df, test_level, reference_level, legend_loc,
+                      theme_name="dark"):
+    """Render MA plot (cached by data + theme)."""
+    return create_ma_plot(ma_df, test_level, reference_level,
+                          legend_loc=legend_loc)
+
+
+@st.cache_data(show_spinner=False)
+def _cached_create_heatmap(heatmap_df, theme_name="dark"):
+    """Render heatmap (cached by data + theme)."""
+    return create_heatmap(heatmap_df)
 
 
 def _format_seconds(seconds: float) -> str:
@@ -111,7 +144,8 @@ def _fig_download_buttons(fig, base_name: str, key_prefix: str):
     col_png, col_svg = st.columns(2)
 
     buf_png = io.BytesIO()
-    fig.savefig(buf_png, format="png", dpi=300, bbox_inches="tight")
+    fig.savefig(buf_png, format="png", dpi=300, bbox_inches="tight",
+                facecolor=fig.get_facecolor(), edgecolor="none")
     buf_png.seek(0)
     with col_png:
         st.download_button(
@@ -123,7 +157,8 @@ def _fig_download_buttons(fig, base_name: str, key_prefix: str):
         )
 
     buf_svg = io.BytesIO()
-    fig.savefig(buf_svg, format="svg", bbox_inches="tight")
+    fig.savefig(buf_svg, format="svg", bbox_inches="tight",
+                facecolor=fig.get_facecolor(), edgecolor="none")
     buf_svg.seek(0)
     with col_svg:
         st.download_button(
@@ -154,6 +189,8 @@ apply_local_upload_limit()
 # ─────────────────────────────────────────────────────────────────────
 if "language" not in st.session_state:
     st.session_state.language = "en"
+if "plot_theme" not in st.session_state:
+    st.session_state.plot_theme = "dark"
 
 with st.sidebar:
     _lang_options = {"English": "en", "Español": "es"}
@@ -168,6 +205,26 @@ with st.sidebar:
     if _lang_options[_selected_label] != st.session_state.language:
         st.session_state.language = _lang_options[_selected_label]
         st.rerun()
+
+    # ── Theme selector ────────────────────────────────────────────────
+    _theme_labels = {"🌑 Dark": "dark", "☀️ Light": "light", "⚡ Cyberpunk": "cyberpunk"}
+    _current_theme_label = {v: k for k, v in _theme_labels.items()}[st.session_state.plot_theme]
+    _selected_theme = st.selectbox(
+        "🎨",
+        options=list(_theme_labels.keys()),
+        index=list(_theme_labels.keys()).index(_current_theme_label),
+        key="theme_selector_bulk",
+        label_visibility="collapsed",
+    )
+    if _theme_labels[_selected_theme] != st.session_state.plot_theme:
+        st.session_state.plot_theme = _theme_labels[_selected_theme]
+        st.rerun()
+
+# Sync engine theme + language with session state
+set_theme(st.session_state.plot_theme)
+from theme_css import inject_theme_css
+inject_theme_css()
+_engine_viz.set_language(st.session_state.get("language", "en"))
 
 # ─────────────────────────────────────────────────────────────────────
 # Page title (with helix animation)
@@ -453,6 +510,23 @@ if counts_file and metadata_file:
     # ─────────────────────────────────────────────────────────────────
     metadata_df = metadata_df_raw[[sample_col, condition_col]].copy()
     metadata_df.columns = ["sample", "condition"]
+
+    # ─────────────────────────────────────────────────────────────────
+    # Pre-validate: structural checks (fatal errors → block run)
+    # ─────────────────────────────────────────────────────────────────
+    dup_samples = check_duplicate_samples(metadata_df)
+    if dup_samples:
+        st.error(
+            f"❌ {tf('strict.duplicate_samples', count=len(dup_samples), samples=', '.join(dup_samples[:10]))}"
+        )
+        st.stop()
+
+    n_condition_nan = check_condition_nan(metadata_df, "condition")
+    if n_condition_nan:
+        st.error(
+            f"❌ {tf('strict.condition_nan', count=n_condition_nan)}"
+        )
+        st.stop()
 
     # ─────────────────────────────────────────────────────────────────
     # Pre-validate and normalize data BEFORE showing options.
@@ -1345,8 +1419,9 @@ if counts_file and metadata_file:
                 title=volcano_title,
                 shrinkage_applied=_shrinkage,
                 legend_loc=legend_loc,
+                theme_name=st.session_state.plot_theme,
             )
-            st.pyplot(fig_volcano_all)
+            st.pyplot(fig_volcano_all, transparent=True)
             _fig_download_buttons(fig_volcano_all, "volcano_all", "dl_volc_all")
 
         with tab_volcano_filt:
@@ -1370,8 +1445,9 @@ if counts_file and metadata_file:
                     title=volcano_title,
                     shrinkage_applied=_shrinkage,
                     legend_loc=legend_loc,
+                    theme_name=st.session_state.plot_theme,
                 )
-                st.pyplot(fig_volcano_filt)
+                st.pyplot(fig_volcano_filt, transparent=True)
                 st.caption(
                     tf("viz.filtered_caption",
                        n=len(filtered_df), padj=filt_padj, log2fc=filt_log2fc)
@@ -1379,16 +1455,114 @@ if counts_file and metadata_file:
                 _fig_download_buttons(fig_volcano_filt, "volcano_filtered", "dl_volc_filt")
 
         with tab_pca:
-            st.pyplot(figures["pca"])
-            _fig_download_buttons(figures["pca"], "pca", "dl_pca")
+            _pca_df = figures.get("pca_df")
+            if _pca_df is not None:
+                fig_pca = _cached_create_pca(
+                    _pca_df, "condition", legend_loc,
+                    theme_name=st.session_state.plot_theme,
+                )
+            else:
+                fig_pca = figures["pca"]
+            st.pyplot(fig_pca, transparent=True)
+            _fig_download_buttons(fig_pca, "pca", "dl_pca")
 
         with tab_ma:
-            st.pyplot(figures["ma"])
-            _fig_download_buttons(figures["ma"], "ma_plot", "dl_ma")
+            _ma_df = figures.get("ma_df")
+            if _ma_df is not None:
+                fig_ma = _cached_create_ma(
+                    _ma_df,
+                    st.session_state.get("test_level", "test"),
+                    st.session_state.get("reference_level", "reference"),
+                    legend_loc,
+                    theme_name=st.session_state.plot_theme,
+                )
+            else:
+                fig_ma = figures["ma"]
+            st.pyplot(fig_ma, transparent=True)
+            _fig_download_buttons(fig_ma, "ma_plot", "dl_ma")
 
         with tab_heatmap:
-            st.pyplot(figures["heatmap"])
-            _fig_download_buttons(figures["heatmap"], "heatmap", "dl_heatmap")
+            _heatmap_df = figures.get("heatmap_df")
+            if _heatmap_df is not None:
+                fig_heatmap = _cached_create_heatmap(
+                    _heatmap_df,
+                    theme_name=st.session_state.plot_theme,
+                )
+            else:
+                fig_heatmap = figures["heatmap"]
+            st.pyplot(fig_heatmap, transparent=True)
+            _fig_download_buttons(fig_heatmap, "heatmap", "dl_heatmap")
+
+        # ─────────────────────────────────────────────────────────
+        # Validation quality report (from pipeline)
+        # ─────────────────────────────────────────────────────────
+        val_report = figures.get("validation_report")
+        if val_report is not None:
+            with st.expander(f"🛡️ {t('strict.report_title')}", expanded=False):
+                # Summary metrics
+                col_e, col_w, col_i = st.columns(3)
+                col_e.metric(t("strict.errors"), val_report.get("n_errors", 0))
+                col_w.metric(t("strict.warnings"), val_report.get("n_warnings", 0))
+                col_i.metric(t("strict.info_items"), val_report.get("n_info", 0))
+
+                findings = val_report.get("findings", [])
+                if not findings:
+                    st.success(f"✅ {t('strict.passed')}")
+                else:
+                    _severity_icon = {
+                        "error": "🔴",
+                        "warning": "🟡",
+                        "info": "🔵",
+                    }
+                    st.markdown(f"**{t('strict.details')}**")
+                    for finding in findings:
+                        icon = _severity_icon.get(finding["severity"], "⚪")
+                        # Try to render i18n, fallback to raw key
+                        try:
+                            msg = tf(finding["i18n_key"], **finding.get("i18n_params", {}))
+                        except Exception:
+                            msg = finding["i18n_key"]
+                        st.markdown(f"{icon} {msg}")
+
+                # Download button
+                report_json = json.dumps(val_report, indent=2, ensure_ascii=False)
+                st.download_button(
+                    label=f"📥 {t('strict.download_report')}",
+                    data=report_json,
+                    file_name="validation_report.json",
+                    mime="application/json",
+                )
+
+        # ─────────────────────────────────────────────────────────
+        # Scientific Audit Log
+        # ─────────────────────────────────────────────────────────
+        audit_data = figures.get("audit")
+        if audit_data is not None:
+            with st.expander(f"📋 {t('audit.section_title')}", expanded=False):
+                st.markdown(t("audit.description"))
+                col_aj, col_at = st.columns(2)
+                with col_aj:
+                    import json as _json_audit
+                    _audit_json_str = _json_audit.dumps(
+                        audit_data, indent=2, ensure_ascii=False,
+                    )
+                    st.download_button(
+                        label=f"📥 {t('audit.download_json')}",
+                        data=_audit_json_str,
+                        file_name="audit_log.json",
+                        mime="application/json",
+                        key="dl_audit_json",
+                    )
+                with col_at:
+                    from engine.audit import format_audit_text
+                    _audit_txt = format_audit_text(audit_data)
+                    st.download_button(
+                        label=f"📥 {t('audit.download_txt')}",
+                        data=_audit_txt,
+                        file_name="audit_log.txt",
+                        mime="text/plain",
+                        key="dl_audit_txt",
+                    )
 
         # ─────────────────────────────────────────────────────────
         # Highlight genes of interest
@@ -1444,8 +1618,9 @@ if counts_file and metadata_file:
                         test_level=st.session_state.get("test_level", "test"),
                         reference_level=st.session_state.get("reference_level", "reference"),
                         legend_loc=legend_loc,
+                        theme_name=st.session_state.plot_theme,
                     )
-                    st.pyplot(fig_highlight)
+                    st.pyplot(fig_highlight, transparent=True)
                     _fig_download_buttons(fig_highlight, "volcano_highlighted", "dl_highlight")
                 else:
                     st.error(f"❌ {t('highlight.none_found')}")

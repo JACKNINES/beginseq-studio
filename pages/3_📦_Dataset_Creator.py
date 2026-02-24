@@ -14,7 +14,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from i18n import t, tf
-from gdc_client import (
+from engine.config import set_theme, THEME_PRESETS
+from engine.gdc_client import (
     fetch_tcga_projects,
     fetch_rnaseq_files,
     download_and_extract_batch,
@@ -51,6 +52,8 @@ st.set_page_config(
 # ─────────────────────────────────────────────────────────────────────
 if "language" not in st.session_state:
     st.session_state.language = "en"
+if "plot_theme" not in st.session_state:
+    st.session_state.plot_theme = "dark"
 
 with st.sidebar:
     _lang_options = {"English": "en", "Español": "es"}
@@ -65,6 +68,25 @@ with st.sidebar:
     if _lang_options[_selected_label] != st.session_state.language:
         st.session_state.language = _lang_options[_selected_label]
         st.rerun()
+
+    # ── Theme selector ────────────────────────────────────────────────
+    _theme_labels = {"🌑 Dark": "dark", "☀️ Light": "light", "⚡ Cyberpunk": "cyberpunk"}
+    _current_theme_label = {v: k for k, v in _theme_labels.items()}[st.session_state.plot_theme]
+    _selected_theme = st.selectbox(
+        "🎨",
+        options=list(_theme_labels.keys()),
+        index=list(_theme_labels.keys()).index(_current_theme_label),
+        key="theme_selector_dataset",
+        label_visibility="collapsed",
+    )
+    if _theme_labels[_selected_theme] != st.session_state.plot_theme:
+        st.session_state.plot_theme = _theme_labels[_selected_theme]
+        st.rerun()
+
+# Apply the selected theme to the engine + UI
+set_theme(st.session_state.plot_theme)
+from theme_css import inject_theme_css
+inject_theme_css()
 
 # ─────────────────────────────────────────────────────────────────────
 # Title
@@ -346,6 +368,7 @@ if st.session_state.dc_projects is not None:
                         status_text = st.empty()
 
                         def download_progress(current: int, total: int, msg: str):
+                            """Update progress bar during file download (0–50%)."""
                             pct = current / total * 0.5 if total > 0 else 0
                             progress_bar.progress(
                                 min(pct, 0.5),
@@ -376,6 +399,7 @@ if st.session_state.dc_projects is not None:
                         progress_bar.progress(0.5, text=t("dc.building_matrix"))
 
                         def parse_progress(current: int, total: int, msg: str):
+                            """Update progress bar during matrix assembly (50–100%)."""
                             pct = 0.5 + (current / total * 0.5) if total > 0 else 0.5
                             progress_bar.progress(
                                 min(pct, 1.0),

@@ -22,6 +22,7 @@ st.set_page_config(
 
 from i18n import t
 from runtime_utils import apply_local_upload_limit, is_running_locally, is_running_in_docker
+from engine.config import set_theme, THEME_PRESETS
 
 # ─────────────────────────────────────────────────────────────────────
 # Local-only: raise upload limit to 5 GB for scRNA-seq datasets
@@ -50,6 +51,9 @@ if is_running_locally() and not is_running_in_docker():
 if "language" not in st.session_state:
     st.session_state.language = "en"
 
+if "plot_theme" not in st.session_state:
+    st.session_state.plot_theme = "dark"
+
 with st.sidebar:
     _lang_options = {"English": "en", "Español": "es"}
     _current_label = "English" if st.session_state.language == "en" else "Español"
@@ -63,6 +67,25 @@ with st.sidebar:
     if _lang_options[_selected_label] != st.session_state.language:
         st.session_state.language = _lang_options[_selected_label]
         st.rerun()
+
+    # ── Theme selector ────────────────────────────────────────────────
+    _theme_labels = {"🌑 Dark": "dark", "☀️ Light": "light", "⚡ Cyberpunk": "cyberpunk"}
+    _current_theme_label = {v: k for k, v in _theme_labels.items()}[st.session_state.plot_theme]
+    _selected_theme = st.selectbox(
+        "🎨",
+        options=list(_theme_labels.keys()),
+        index=list(_theme_labels.keys()).index(_current_theme_label),
+        key="theme_selector_home",
+        label_visibility="collapsed",
+    )
+    if _theme_labels[_selected_theme] != st.session_state.plot_theme:
+        st.session_state.plot_theme = _theme_labels[_selected_theme]
+        st.rerun()
+
+# Apply the selected theme to the engine + UI
+set_theme(st.session_state.plot_theme)
+from theme_css import inject_theme_css
+inject_theme_css()
 
 # ─────────────────────────────────────────────────────────────────────
 # Main title (with helix animation)

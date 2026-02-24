@@ -4,21 +4,23 @@
 
 1. [Overview](#overview)
 2. [What You Need Before Starting](#what-you-need-before-starting)
-3. [Step 1 — Upload Your Files](#step-1--upload-your-files)
-4. [Step 2 — Preview and Validate Data](#step-2--preview-and-validate-data)
-5. [Step 3 — Configure Metadata Columns](#step-3--configure-metadata-columns)
-6. [Step 4 — Filter Samples (Optional)](#step-4--filter-samples-optional)
-7. [Step 5 — Select the Contrast](#step-5--select-the-contrast)
-8. [Step 6 — Expression-Based Classification (Optional)](#step-6--expression-based-classification-optional)
-9. [Step 7 — Gene Pre-Filtering (Optional but Recommended)](#step-7--gene-pre-filtering-optional-but-recommended)
-10. [Step 8 — Batch Correction for PCA (Optional)](#step-8--batch-correction-for-pca-optional)
-11. [Step 9 — Run the Analysis](#step-9--run-the-analysis)
-12. [Step 10 — Interpret Results](#step-10--interpret-results)
-13. [Step 11 — Visualize Results](#step-11--visualize-results)
-14. [Step 12 — Highlight Genes of Interest](#step-12--highlight-genes-of-interest)
-15. [Step 13 — Download Results](#step-13--download-results)
-16. [Frequently Asked Questions](#frequently-asked-questions)
-17. [Glossary](#glossary)
+3. [Sidebar — Theme and Language](#sidebar--theme-and-language)
+4. [Step 1 — Upload Your Files](#step-1--upload-your-files)
+5. [Step 2 — Preview and Validate Data](#step-2--preview-and-validate-data)
+6. [Step 3 — Configure Metadata Columns](#step-3--configure-metadata-columns)
+7. [Step 4 — Filter Samples (Optional)](#step-4--filter-samples-optional)
+8. [Step 5 — Select the Contrast](#step-5--select-the-contrast)
+9. [Step 6 — Expression-Based Classification (Optional)](#step-6--expression-based-classification-optional)
+10. [Step 7 — Gene Pre-Filtering (Optional but Recommended)](#step-7--gene-pre-filtering-optional-but-recommended)
+11. [Step 8 — Batch Correction for PCA (Optional)](#step-8--batch-correction-for-pca-optional)
+12. [Step 9 — Run the Analysis](#step-9--run-the-analysis)
+13. [Step 10 — Interpret Results](#step-10--interpret-results)
+14. [Step 11 — Visualize Results](#step-11--visualize-results)
+15. [Step 12 — Highlight Genes of Interest](#step-12--highlight-genes-of-interest)
+16. [Step 13 — Download Results](#step-13--download-results)
+17. [Step 14 — Audit Log (Reproducibility)](#step-14--audit-log-reproducibility)
+18. [Frequently Asked Questions](#frequently-asked-questions)
+19. [Glossary](#glossary)
 
 ---
 
@@ -101,6 +103,30 @@ A table that maps each sample to its experimental condition:
 ### File Size Limits
 
 When running locally, each file can be up to **2 GB**. This is more than enough for any bulk RNA-seq experiment.
+
+---
+
+## Sidebar — Theme and Language
+
+Before starting your analysis, you can customize the interface from the sidebar:
+
+### Language (🌐)
+
+Switch between **English** and **Spanish**. All labels, instructions, and messages update instantly.
+
+### Visual Theme (🎨)
+
+Choose a visual theme that applies to both the interface AND all generated plots:
+
+| Theme | Description |
+|-------|-------------|
+| 🌑 **Dark** (default) | Dark background with soft-contrast colors. Comfortable for extended use. |
+| ☀️ **Light** | White background with high-contrast colors. Best for print-ready figures. |
+| ⚡ **Cyberpunk** | Deep black with neon accents. High-saturation for presentations on dark backgrounds. |
+
+The theme persists across all pages during your session. Choose the theme **before** running the analysis — all plots will be generated using the selected palette.
+
+> **Tip:** If you plan to include plots in a publication or poster with a white background, use the **Light** theme. For presentations on a projector, **Dark** or **Cyberpunk** work best.
 
 ---
 
@@ -500,6 +526,43 @@ Every plot has two download buttons:
 
 ---
 
+## Step 14 — Audit Log (Reproducibility)
+
+After the analysis completes, an expandable **Audit Log** section appears at the bottom of the results.
+
+### What it contains
+
+The audit log captures everything needed to reproduce your analysis:
+
+| Section | Content |
+|---------|---------|
+| **Timestamp** | When the analysis was run (UTC) |
+| **Platform** | Operating system, Python version, CPU architecture |
+| **Library versions** | Exact versions of pydeseq2, pandas, numpy, scipy, matplotlib, etc. |
+| **Input data** | Gene count, sample count, conditions, reference/test levels |
+| **Parameters** | All DESeq2 parameters, gene filter settings, significance thresholds |
+| **Filter statistics** | How many genes were removed by pre-filtering and why |
+| **Results summary** | Total significant genes, up/down-regulated counts, top genes by padj |
+| **Step timings** | How long each pipeline step took (in seconds) |
+
+### Downloads
+
+Two download buttons are available:
+
+| Button | Format | Best for |
+|--------|--------|----------|
+| **📥 Download audit log (JSON)** | `.json` | Programmatic access, automated pipelines, archiving |
+| **📥 Download audit log (TXT)** | `.txt` | Pasting into lab notebooks, methods sections, supplementary materials |
+
+### Why this matters
+
+Reproducibility is a cornerstone of scientific research. The audit log ensures that:
+- You (or a reviewer) can verify exactly which parameters and software versions produced your results.
+- Re-running the analysis with the same data + parameters should give identical results.
+- The TXT format is ready to paste into a Methods section or lab notebook entry.
+
+---
+
 ## Frequently Asked Questions
 
 ### Q: Can I use normalized data (FPKM, TPM)?
@@ -541,6 +604,7 @@ See the time estimates in [Step 9](#step-9--run-the-analysis). The single most e
 
 | Term | Definition |
 |------|-----------|
+| **Audit log** | A record of all parameters, library versions, data dimensions, and step timings from an analysis run — used for reproducibility |
 | **baseMean** | Average normalized expression across all samples |
 | **Benjamini-Hochberg (BH)** | Multiple testing correction method that controls the false discovery rate |
 | **CPM** | Counts Per Million — a simple normalization for comparing across samples |

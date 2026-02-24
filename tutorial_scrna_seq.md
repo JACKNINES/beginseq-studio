@@ -5,12 +5,13 @@
 1. [Overview](#overview)
 2. [RAM Considerations — Read This First](#ram-considerations--read-this-first)
 3. [What You Need Before Starting](#what-you-need-before-starting)
-4. [Data Ingestion — Three Methods](#data-ingestion--three-methods)
+4. [Sidebar — Theme, Language, and Parameters](#sidebar--theme-language-and-parameters)
+5. [Data Ingestion — Three Methods](#data-ingestion--three-methods)
    - [Method A: 10x File Integrator](#method-a-10x-file-integrator)
    - [Method B: SoupX Ambient RNA Removal](#method-b-soupx-ambient-rna-removal)
    - [Method C: Direct H5AD Upload](#method-c-direct-h5ad-upload)
-5. [Understanding the Sidebar Parameters](#understanding-the-sidebar-parameters)
-6. [The Pipeline — Step by Step](#the-pipeline--step-by-step)
+6. [Understanding the Sidebar Parameters](#understanding-the-sidebar-parameters)
+7. [The Pipeline — Step by Step](#the-pipeline--step-by-step)
    - [Step 1: QC Annotation](#step-1-qc-annotation)
    - [Step 2: Cell & Gene Filtering](#step-2-cell--gene-filtering)
    - [Step 3: Doublet Detection](#step-3-doublet-detection)
@@ -24,12 +25,13 @@
    - [Step 11: UMAP Embedding](#step-11-umap-embedding)
    - [Step 12: Leiden Clustering](#step-12-leiden-clustering)
    - [Step 13: Marker Gene Identification](#step-13-marker-gene-identification)
-7. [Interpreting Results](#interpreting-results)
-8. [Visualization Tabs](#visualization-tabs)
-9. [Downloading Results](#downloading-results)
-10. [RAM Optimization Guide — In Depth](#ram-optimization-guide--in-depth)
-11. [Frequently Asked Questions](#frequently-asked-questions)
-12. [Glossary](#glossary)
+8. [Interpreting Results](#interpreting-results)
+9. [Visualization Tabs](#visualization-tabs)
+10. [Downloading Results](#downloading-results)
+11. [Audit Log (Reproducibility)](#audit-log-reproducibility)
+12. [RAM Optimization Guide — In Depth](#ram-optimization-guide--in-depth)
+13. [Frequently Asked Questions](#frequently-asked-questions)
+14. [Glossary](#glossary)
 
 ---
 
@@ -94,6 +96,30 @@ You need single-cell expression data in one of these formats:
 
 - **Metadata CSV/TSV** — additional cell or gene annotations (sample IDs, donor IDs, batch labels).
 - **Raw (unfiltered) H5AD** — for SoupX ambient RNA removal (from Cell Ranger `raw_feature_bc_matrix`).
+
+---
+
+## Sidebar — Theme, Language, and Parameters
+
+Before starting your analysis, you can customize the interface and analysis parameters from the sidebar.
+
+### Language (🌐)
+
+Switch between **English** and **Spanish**. All labels, instructions, and messages update instantly.
+
+### Visual Theme (🎨)
+
+Choose a visual theme that applies to both the interface AND all generated plots:
+
+| Theme | Description |
+|-------|-------------|
+| 🌑 **Dark** (default) | Dark background with soft-contrast colors. Comfortable for extended use. |
+| ☀️ **Light** | White background with high-contrast colors. Best for print-ready figures. |
+| ⚡ **Cyberpunk** | Deep black with neon accents. High-saturation for presentations on dark backgrounds. |
+
+The theme persists across all pages during your session. Choose the theme **before** running the pipeline — all plots (QC violins, UMAP, heatmaps, marker gene rankings) will be generated using the selected palette.
+
+> **Tip:** The Light theme is best for publication figures. The Cyberpunk theme works well for presentations on projectors or dark slide backgrounds.
 
 ---
 
@@ -660,6 +686,43 @@ The downloaded `.h5ad` file contains everything from the pipeline and can be ope
 
 ---
 
+## Audit Log (Reproducibility)
+
+After the pipeline completes, an expandable **Audit Log** section appears below the download buttons.
+
+### What it contains
+
+The audit log captures everything needed to reproduce your scRNA-seq analysis:
+
+| Section | Content |
+|---------|---------|
+| **Timestamp** | When the analysis was run (UTC) |
+| **Platform** | Operating system, Python version, CPU architecture |
+| **Library versions** | Exact versions of scanpy, anndata, harmonypy, scrublet, pandas, numpy, etc. |
+| **Input data** | Cell count, gene count, data source (H5AD, 10x files, SoupX) |
+| **Parameters** | All QC thresholds, HVG count, PCA components, resolution, batch correction settings |
+| **Filter statistics** | Cells/genes removed at each step, doublets detected |
+| **Results summary** | Final cell/gene count, number of clusters, top marker genes per cluster |
+| **Step timings** | How long each pipeline step took (in seconds) |
+
+### Downloads
+
+Two download buttons are available:
+
+| Button | Format | Best for |
+|--------|--------|----------|
+| **📥 Download audit log (JSON)** | `.json` | Programmatic access, automated pipelines, archiving |
+| **📥 Download audit log (TXT)** | `.txt` | Pasting into lab notebooks, methods sections, supplementary materials |
+
+### Why this matters
+
+Single-cell analysis involves many parameter choices (QC thresholds, resolution, HVG count, etc.). The audit log ensures that you can always go back and see exactly what parameters and software versions produced your clusters and marker genes. This is essential for:
+- Writing Methods sections in publications
+- Responding to reviewer requests about parameter sensitivity
+- Sharing reproducible workflows with collaborators
+
+---
+
 ## RAM Optimization Guide — In Depth
 
 This section provides practical strategies for running the scRNA-seq pipeline on machines with limited RAM (8 GB). These strategies are ordered by effectiveness — **the first one is the most impactful**.
@@ -817,6 +880,7 @@ sobj <- LoadH5Seurat("scrna_analysis.h5seurat")
 | Term | Definition |
 |------|-----------|
 | **AnnData** | Annotated data matrix — the standard data structure for Scanpy. Contains the expression matrix (X), cell metadata (obs), gene metadata (var), embeddings (obsm), and analysis results (uns) |
+| **Audit log** | A record of all parameters, library versions, data dimensions, and step timings from an analysis run — used for reproducibility |
 | **Barcode** | A unique DNA sequence identifying each cell in a droplet-based experiment |
 | **Batch effect** | Technical variation between experimental groups (samples, donors, sequencing runs) that can confound biological signal |
 | **Clustering** | Grouping cells with similar expression profiles into clusters (cell populations) |

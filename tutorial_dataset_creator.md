@@ -5,16 +5,17 @@
 1. [Overview](#overview)
 2. [What is GDC/TCGA?](#what-is-gdctcga)
 3. [What You Need Before Starting](#what-you-need-before-starting)
-4. [Step 1 — Load TCGA Projects](#step-1--load-tcga-projects)
-5. [Step 2 — Select a Project and Fetch Files](#step-2--select-a-project-and-fetch-files)
-6. [Step 3 — Filter and Configure](#step-3--filter-and-configure)
-7. [Step 4 — Download and Build](#step-4--download-and-build)
-8. [Step 5 — Preview and Download Results](#step-5--preview-and-download-results)
-9. [Using Your Dataset in the Bulk RNA-seq Module](#using-your-dataset-in-the-bulk-rna-seq-module)
-10. [Understanding the Output Files](#understanding-the-output-files)
-11. [Practical Examples](#practical-examples)
-12. [Frequently Asked Questions](#frequently-asked-questions)
-13. [Glossary](#glossary)
+4. [Sidebar — Theme and Language](#sidebar--theme-and-language)
+5. [Step 1 — Load TCGA Projects](#step-1--load-tcga-projects)
+6. [Step 2 — Select a Project and Fetch Files](#step-2--select-a-project-and-fetch-files)
+7. [Step 3 — Filter and Configure](#step-3--filter-and-configure)
+8. [Step 4 — Download and Build](#step-4--download-and-build)
+9. [Step 5 — Preview and Download Results](#step-5--preview-and-download-results)
+10. [Using Your Dataset in the Bulk RNA-seq Module](#using-your-dataset-in-the-bulk-rna-seq-module)
+11. [Understanding the Output Files](#understanding-the-output-files)
+12. [Practical Examples](#practical-examples)
+13. [Frequently Asked Questions](#frequently-asked-questions)
+14. [Glossary](#glossary)
 
 ---
 
@@ -97,6 +98,28 @@ Unlike traditional TCGA access methods, you do NOT need:
 | 1,000+ samples | ~1-2 GB |
 
 Files are downloaded as compressed archives and extracted locally. The extracted TSV files are kept in the download directory for reference.
+
+---
+
+## Sidebar — Theme and Language
+
+Before starting, you can customize the interface from the sidebar:
+
+### Language (🌐)
+
+Switch between **English** and **Spanish**. All labels and messages update instantly.
+
+### Visual Theme (🎨)
+
+Choose a visual theme for the interface:
+
+| Theme | Description |
+|-------|-------------|
+| 🌑 **Dark** (default) | Dark background, comfortable for extended use |
+| ☀️ **Light** | White background, best for readability |
+| ⚡ **Cyberpunk** | Deep black with neon accents |
+
+The Dataset Creator does not generate analysis plots, but the theme applies to the entire interface (buttons, tables, progress indicators, etc.) and carries over when you navigate to the Bulk RNA-seq module.
 
 ---
 

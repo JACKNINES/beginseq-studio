@@ -18,9 +18,11 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from i18n import t, tf
-from config import SCRNA_CONFIG, UPLOAD_LIMITS_LOCAL
+from engine.config import SCRNA_CONFIG, UPLOAD_LIMITS_LOCAL, set_theme, THEME_PRESETS
 from runtime_utils import is_running_locally, apply_local_upload_limit
-from visualization import LEGEND_LOCATIONS
+from engine.visualization import LEGEND_LOCATIONS
+import engine.visualization as _engine_viz
+import engine.scrna_visualization as _engine_scrna_viz
 
 import pandas as pd
 import matplotlib
@@ -46,6 +48,8 @@ st.set_page_config(
 # ─────────────────────────────────────────────────────────────────────
 if "language" not in st.session_state:
     st.session_state.language = "en"
+if "plot_theme" not in st.session_state:
+    st.session_state.plot_theme = "dark"
 
 with st.sidebar:
     _lang_options = {"English": "en", "Español": "es"}
@@ -60,6 +64,27 @@ with st.sidebar:
     if _lang_options[_selected_label] != st.session_state.language:
         st.session_state.language = _lang_options[_selected_label]
         st.rerun()
+
+    # ── Theme selector ────────────────────────────────────────────────
+    _theme_labels = {"🌑 Dark": "dark", "☀️ Light": "light", "⚡ Cyberpunk": "cyberpunk"}
+    _current_theme_label = {v: k for k, v in _theme_labels.items()}[st.session_state.plot_theme]
+    _selected_theme = st.selectbox(
+        "🎨",
+        options=list(_theme_labels.keys()),
+        index=list(_theme_labels.keys()).index(_current_theme_label),
+        key="theme_selector_scrna",
+        label_visibility="collapsed",
+    )
+    if _theme_labels[_selected_theme] != st.session_state.plot_theme:
+        st.session_state.plot_theme = _theme_labels[_selected_theme]
+        st.rerun()
+
+# Sync engine theme + language with session state
+set_theme(st.session_state.plot_theme)
+from theme_css import inject_theme_css
+inject_theme_css()
+_engine_viz.set_language(st.session_state.get("language", "en"))
+_engine_scrna_viz.set_language(st.session_state.get("language", "en"))
 
 # ─────────────────────────────────────────────────────────────────────
 # Localhost gate + dependency check
@@ -206,20 +231,25 @@ with st.expander(f"🧩 {t('scrna.integrator_title')}", expanded=False):
             key="scrna_integrate_btn",
         )
         if integrate_btn:
-            from scrna_pipeline import integrate_10x_files
+            from engine.scrna_pipeline import integrate_10x_files
+            from engine.protocols import FileData
 
             with st.spinner(t("scrna.integrator_running")):
                 try:
+                    _mtx_fd = FileData(content=mtx_file.getvalue(), name=mtx_file.name)
+                    _feat_fd = FileData(content=feat_file.getvalue(), name=feat_file.name)
+                    _bc_fd = FileData(content=bc_file.getvalue(), name=bc_file.name)
+                    _meta_fd = FileData(content=meta_file.getvalue(), name=meta_file.name) if meta_file is not None else None
                     h5ad_bytes = integrate_10x_files(
-                        mtx_file, feat_file, bc_file,
-                        metadata_file=meta_file,
+                        _mtx_fd, _feat_fd, _bc_fd,
+                        metadata=_meta_fd,
                         metadata_force_target=_meta_force_target,
                     )
                     st.success(t("scrna.integrator_success"))
 
                     # If metadata was included, show what happened
                     if meta_file is not None:
-                        from scrna_pipeline import (
+                        from engine.scrna_pipeline import (
                             _read_metadata_file,
                             detect_metadata_target,
                         )
@@ -233,8 +263,7 @@ with st.expander(f"🧩 {t('scrna.integrator_title')}", expanded=False):
                         _tmp.close()
                         _adata_check = _ad.read_h5ad(_tmp.name)
                         Path(_tmp.name).unlink(missing_ok=True)
-                        meta_file.seek(0)
-                        _meta_df = _read_metadata_file(meta_file)
+                        _meta_df = _read_metadata_file(_meta_fd)
                         _det = detect_metadata_target(_adata_check, _meta_df)
                         _target_used = (
                             _meta_force_target
@@ -283,7 +312,7 @@ with st.expander(f"🧩 {t('scrna.integrator_title')}", expanded=False):
 
 # Cache dependency check in session_state so re-runs don't re-import R
 if "_soupx_ok" not in st.session_state:
-    from scrna_pipeline import check_soupx_available
+    from engine.scrna_pipeline import check_soupx_available
     st.session_state["_soupx_status"] = check_soupx_available()
     st.session_state["_soupx_ok"] = st.session_state["_soupx_status"]["soupx"]
 
@@ -349,7 +378,7 @@ with st.expander(f"🧹 {t('scrna.soupx_title')}", expanded=False):
                 key="scrna_soupx_btn",
             )
             if soupx_btn:
-                from scrna_pipeline import run_soupx
+                from engine.scrna_pipeline import run_soupx
 
                 with st.spinner(t("scrna.soupx_running")):
                     try:
@@ -410,31 +439,38 @@ class _AnnDataPreview:
     (via ``_load_h5ad``).
     """
     def __init__(self, obs, var, shape, _unused=None):
+        """Create a preview from pre-extracted metadata.
+
+        Parameters
+        ----------
+        obs : pd.DataFrame
+            Observation (cell) annotations.
+        var : pd.DataFrame
+            Variable (gene) annotations.
+        shape : tuple[int, int]
+            ``(n_obs, n_vars)`` dimensions of the full dataset.
+        """
         self.obs = obs
         self.var = var
         self._shape = shape
 
     @property
-    def n_obs(self):
+    def n_obs(self) -> int:
+        """Number of observations (cells)."""
         return self._shape[0]
 
     @property
-    def n_vars(self):
+    def n_vars(self) -> int:
+        """Number of variables (genes)."""
         return self._shape[1]
 
 
 @st.cache_data(show_spinner=False)
 def _load_h5ad(file_bytes: bytes):
     """Load H5AD data with caching based on file content."""
-    from scrna_pipeline import load_h5ad as _load
+    from engine.scrna_pipeline import load_h5ad as _load
 
-    class _FakeUpload:
-        def __init__(self, data):
-            self._data = data
-        def getvalue(self):
-            return self._data
-
-    return _load(_FakeUpload(file_bytes))
+    return _load(file_bytes)
 
 
 @st.cache_data(show_spinner=False)
@@ -444,7 +480,7 @@ def _load_h5ad_backed(file_bytes: bytes):
     Returns (obs, var, shape) — the expression matrix is NOT loaded,
     saving several GB of RAM for large datasets during parameter tuning.
     """
-    from scrna_pipeline import load_h5ad_backed as _load_backed
+    from engine.scrna_pipeline import load_h5ad_backed as _load_backed
     obs, var, shape, tmp_path = _load_backed(file_bytes)
     # Clean up the temporary file immediately — we only needed metadata
     Path(tmp_path).unlink(missing_ok=True)
@@ -473,7 +509,7 @@ with st.expander(t("scrna.preview_title"), expanded=False):
     # ── Cell metadata (obs) ──
     st.markdown(f"**{t('scrna.preview_obs_title')}**")
     if adata_raw.obs.shape[1] > 0:
-        st.dataframe(adata_raw.obs.head(10), width="stretch")
+        st.dataframe(adata_raw.obs.head(10), width="stretch", transparent=True)
         st.caption(tf("scrna.preview_obs_caption",
                        rows=adata_raw.obs.shape[0],
                        cols=adata_raw.obs.shape[1]))
@@ -483,7 +519,7 @@ with st.expander(t("scrna.preview_title"), expanded=False):
     # ── Gene metadata (var) ──
     st.markdown(f"**{t('scrna.preview_var_title')}**")
     if adata_raw.var.shape[1] > 0:
-        st.dataframe(adata_raw.var.head(10), width="stretch")
+        st.dataframe(adata_raw.var.head(10), width="stretch", transparent=True)
         st.caption(tf("scrna.preview_var_caption",
                        rows=adata_raw.var.shape[0],
                        cols=adata_raw.var.shape[1]))
@@ -701,7 +737,7 @@ run_button = st.button(
 )
 
 if run_button:
-    from scrna_pipeline import run_scrna_pipeline, PIPELINE_STEPS, annotate_qc
+    from engine.scrna_pipeline import run_scrna_pipeline, PIPELINE_STEPS, annotate_qc
 
     # Free previous results from session_state to avoid accumulating
     # multiple AnnData copies in memory across repeated runs.
@@ -843,7 +879,7 @@ st.markdown("---")
 # Visualization Tabs
 # ─────────────────────────────────────────────────────────────────────
 try:
-    from scrna_visualization import (
+    from engine.scrna_visualization import (
         plot_qc_violin,
         plot_qc_scatter,
         plot_hvg,
@@ -873,7 +909,7 @@ with tab_qc:
     adata_qc = st.session_state.get("scrna_adata_qc_preview", adata)
 
     fig_violin = plot_qc_violin(adata_qc)
-    st.pyplot(fig_violin, width="stretch")
+    st.pyplot(fig_violin, width="stretch", transparent=True)
 
     dl_col1, dl_col2 = st.columns(2)
     with dl_col1:
@@ -896,7 +932,7 @@ with tab_qc:
     st.markdown("---")
 
     fig_scatter = plot_qc_scatter(adata_qc)
-    st.pyplot(fig_scatter, width="stretch")
+    st.pyplot(fig_scatter, width="stretch", transparent=True)
 
     dl_sc1, dl_sc2 = st.columns(2)
     with dl_sc1:
@@ -921,7 +957,7 @@ with tab_qc:
 # ── HVG Tab ─────────────────────────────────────────────────────────
 with tab_hvg:
     fig_hvg = plot_hvg(adata)
-    st.pyplot(fig_hvg, width="stretch")
+    st.pyplot(fig_hvg, width="stretch", transparent=True)
 
     dl_col1, dl_col2 = st.columns(2)
     with dl_col1:
@@ -949,14 +985,14 @@ with tab_pca:
 
     with col_pca1:
         fig_pca_var = plot_pca_variance(adata)
-        st.pyplot(fig_pca_var, width="stretch")
+        st.pyplot(fig_pca_var, width="stretch", transparent=True)
 
     with col_pca2:
         _legend_loc = st.session_state.get("scrna_legend_loc", "best")
         _ct = st.session_state.get("scrna_celltype_col", t("scrna.option_none"))
         _pca_color = _ct if _ct != t("scrna.option_none") and _ct in adata.obs.columns else "leiden"
         fig_pca_emb = plot_pca_embedding(adata, color=_pca_color, legend_loc=_legend_loc)
-        st.pyplot(fig_pca_emb, width="stretch")
+        st.pyplot(fig_pca_emb, width="stretch", transparent=True)
 
     dl_col1, dl_col2, dl_col3, dl_col4 = st.columns(4)
     with dl_col1:
@@ -1016,7 +1052,7 @@ with tab_umap:
 
     _legend_loc = st.session_state.get("scrna_legend_loc", "best")
     fig_umap = plot_umap(adata, color=umap_color, legend_loc=_legend_loc)
-    st.pyplot(fig_umap, width="stretch")
+    st.pyplot(fig_umap, width="stretch", transparent=True)
 
     dl_col1, dl_col2 = st.columns(2)
     with dl_col1:
@@ -1055,7 +1091,7 @@ with tab_umap:
         )
         if _gene_found:
             fig_gene = plot_umap(adata, color=gene_name, title=tf("plot.umap_title_prefix", color=gene_name), legend_loc=_legend_loc)
-            st.pyplot(fig_gene, width="stretch")
+            st.pyplot(fig_gene, width="stretch", transparent=True)
             dl_g1, dl_g2 = st.columns(2)
             with dl_g1:
                 st.download_button(
@@ -1085,7 +1121,7 @@ with tab_markers:
         _groupby = adata.uns["rank_genes_groups"]["params"]["groupby"]
 
         fig_ranking = plot_marker_genes_ranking(adata, n_genes=5, groupby=_groupby)
-        st.pyplot(fig_ranking, width="stretch")
+        st.pyplot(fig_ranking, width="stretch", transparent=True)
 
         dl_m1, dl_m2 = st.columns(2)
         with dl_m1:
@@ -1109,7 +1145,7 @@ with tab_markers:
 
         # Dotplot — top marker genes per cluster
         fig_dotplot = plot_dotplot(adata, n_genes=5, groupby=_groupby)
-        st.pyplot(fig_dotplot, width="stretch")
+        st.pyplot(fig_dotplot, width="stretch", transparent=True)
 
         dl_d1, dl_d2 = st.columns(2)
         with dl_d1:
@@ -1135,7 +1171,7 @@ with tab_markers:
 
         # Heatmap
         fig_heatmap = plot_marker_heatmap(adata, n_genes=5, groupby=_groupby)
-        st.pyplot(fig_heatmap, width="stretch")
+        st.pyplot(fig_heatmap, width="stretch", transparent=True)
 
         dl_h1, dl_h2 = st.columns(2)
         with dl_h1:
@@ -1158,7 +1194,7 @@ with tab_markers:
         st.markdown("---")
 
         # Marker genes table per group
-        from scrna_pipeline import get_marker_genes_df
+        from engine.scrna_pipeline import get_marker_genes_df
 
         cluster_col1, cluster_col2 = st.columns([1, 3])
         with cluster_col1:
@@ -1229,7 +1265,7 @@ with dl_col2:
 # Download marker genes
 with dl_col3:
     if "rank_genes_groups" in adata.uns:
-        from scrna_pipeline import get_marker_genes_df
+        from engine.scrna_pipeline import get_marker_genes_df
         df_all = get_marker_genes_df(adata, group=None, n_genes=25)
         csv_all = df_all.to_csv(index=False)
         st.download_button(
@@ -1239,3 +1275,31 @@ with dl_col3:
             mime="text/csv",
             key="dl_markers_csv_bottom",
         )
+
+# ── Scientific Audit Log ──────────────────────────────────────
+if "audit_log" in adata.uns:
+    with st.expander(f"📋 {t('audit.section_title')}", expanded=False):
+        st.markdown(t("audit.description"))
+        col_aj, col_at = st.columns(2)
+        with col_aj:
+            import json as _json_audit
+            _audit_json_str = _json_audit.dumps(
+                adata.uns["audit_log"], indent=2, ensure_ascii=False,
+            )
+            st.download_button(
+                label=f"📥 {t('audit.download_json')}",
+                data=_audit_json_str,
+                file_name="scrna_audit_log.json",
+                mime="application/json",
+                key="dl_scrna_audit_json",
+            )
+        with col_at:
+            from engine.audit import format_audit_text
+            _audit_txt = format_audit_text(adata.uns["audit_log"])
+            st.download_button(
+                label=f"📥 {t('audit.download_txt')}",
+                data=_audit_txt,
+                file_name="scrna_audit_log.txt",
+                mime="text/plain",
+                key="dl_scrna_audit_txt",
+            )
