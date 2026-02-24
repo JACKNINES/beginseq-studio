@@ -24,11 +24,6 @@ from engine.data_io import (
     read_metadata_file,
     results_to_csv,
 )
-from engine.scrna_pipeline import (
-    run_scrna_pipeline,
-    load_h5ad,
-    integrate_10x_files,
-)
 from engine.gdc_client import (
     fetch_tcga_projects,
     fetch_rnaseq_files,
@@ -43,6 +38,15 @@ from engine.audit import (
     get_library_versions,
     format_audit_text,
 )
+
+# --- Lazy imports for optional heavy dependencies (scanpy) --------
+_SCRNA_NAMES = {"run_scrna_pipeline", "load_h5ad", "integrate_10x_files"}
+
+def __getattr__(name: str):
+    if name in _SCRNA_NAMES:
+        from engine import scrna_pipeline as _sp
+        return getattr(_sp, name)
+    raise AttributeError(f"module 'engine' has no attribute {name!r}")
 
 __all__ = [
     "run_deseq2_pipeline",
