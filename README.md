@@ -8,7 +8,7 @@
   <strong>Interactive RNA-seq analysis — no code required.</strong>
 </p>
 
-**BeginSeq Studio** is an interactive web application for RNA-seq analysis built with [Streamlit](https://streamlit.io/), created by **Elliot Ridout-Buhl**. It is designed for **beginners and researchers with no programming or command-line experience**, providing a fully code-free interface to perform bulk and single-cell differential expression analysis, build datasets from public repositories, and visualize results — all from the browser.
+**BeginSeq Studio** is an interactive web application for RNA-seq analysis built with [Streamlit](https://streamlit.io/). It is designed for **beginners and researchers with no programming or command-line experience**, providing a fully code-free interface to perform bulk and single-cell differential expression analysis, build datasets from public repositories, and visualize results — all from the browser.
 
 ---
 
